@@ -10,6 +10,7 @@ public abstract class Griddable
     readonly protected SpriteRenderer SR;
     readonly protected Mono mono;
     readonly protected PuzzleGrid ParentGrid;
+
     protected Vector2 GridPosition;
     public abstract bool Swappable { get; protected set; }
     readonly static int SWAP_FRAMES = 8;
@@ -91,6 +92,7 @@ public abstract class Griddable
 
         SR.material.SetFloat("_Offset", 0f);
         state = State.Set;
+        SR.material = GameAssets.Material.Default;
 
     }
 

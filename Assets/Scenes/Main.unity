@@ -272,7 +272,7 @@ PrefabInstance:
     - target: {fileID: 449904004105654150, guid: 7d28d3cc3566c144b81db25a2fa2b379, type: 3}
       propertyPath: m_Materials.Array.data[0]
       value: 
-      objectReference: {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
+      objectReference: {fileID: 2100000, guid: 733dac196f03450499d4801eca01f03f, type: 2}
     - target: {fileID: 3411764600428204924, guid: 7d28d3cc3566c144b81db25a2fa2b379, type: 3}
       propertyPath: m_Name
       value: PuzzleFrame

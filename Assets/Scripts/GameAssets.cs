@@ -23,10 +23,14 @@ static public class GameAssets
     #region Materials
     private static void LoadMaterials()
     {
+
+        // 
+
         Materials = new Dictionary<string, UnityEngine.Material>
         {
-           //["SpriteDefault"] = Resources.Load<UnityEngine.Material>("Arena Grid"),
-           ["Swap"] = Resources.Load<UnityEngine.Material>("Swap")
+            //["SpriteDefault"] = Resources.Load<UnityEngine.Material>("Arena Grid"),
+            ["Default"] = Resources.Load<UnityEngine.Material>("Default"),
+            ["Swap"] = Resources.Load<UnityEngine.Material>("Swap")
         };
     }
 
@@ -40,6 +44,7 @@ static public class GameAssets
     {
         // Example - public static UnityEngine.Material ArenaGrid { get => GetMaterial("Arena Grid"); }
         public static UnityEngine.Material Swap { get => GetMaterial("Swap"); }
+        public static UnityEngine.Material Default { get => GetMaterial("Default"); }
     }
 
     #endregion
