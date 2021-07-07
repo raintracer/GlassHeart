@@ -10,12 +10,16 @@ public abstract class Griddable
     readonly protected SpriteRenderer SR;
     readonly protected Mono mono;
     readonly protected PuzzleGrid ParentGrid;
+    public enum TileType { Basic, SwapTemp }
+    public abstract TileType Type { get; protected set; }
 
     public Vector2 GridPosition { get; private set; }
+    public Vector2Int GridCoordinate { get; private set; }
+
     const float FALL_SPEED = 0.2F;
     public abstract bool Swappable { get; protected set; }
     readonly static int SWAP_FRAMES = 8;
-    protected enum State { Free, Set, Swapping, Clearing, Special }
+    protected enum State { Free, Set, Swapping, Clearing, Dying, Special }
     protected State state;
     public bool LockedToGrid { get; private set; }
     
@@ -60,6 +64,8 @@ public abstract class Griddable
         return (Swappable && (state == State.Set));
     }
 
+    abstract protected void OnSwapComplete();
+
     public void Swap(bool SwapRight)
     {
         if (!Swappable || !SwappingAllowed()) Debug.LogError("Illegal Swap Requested.");
@@ -70,8 +76,6 @@ public abstract class Griddable
 
     private IEnumerator AnimateSwap(bool SwapRight)
     {
-        
-        Debug.Log("Tile Requesting Update (ID): " + KeyID);
 
         SR.material = GameAssets.Material.Swap;
         float SwapOffset, OffsetChange;
@@ -98,6 +102,8 @@ public abstract class Griddable
         SR.material = GameAssets.Material.Default;
 
         ParentGrid.PingUpdate(this);
+        OnSwapComplete();
+
     }
 
     public void Unattach()
@@ -105,9 +111,15 @@ public abstract class Griddable
         state = State.Free;
     }
 
-    public void Attach()
+    public void Attach(Vector2Int _TileCoordinate)
     {
         state = State.Set;
+        GridCoordinate = _TileCoordinate;
+    }
+
+    public void ChangeAttachmentCoordinate(Vector2Int _TileCoordinate)
+    {
+        GridCoordinate = _TileCoordinate;
     }
 
     public void FreeFall()
@@ -123,7 +135,7 @@ public abstract class Griddable
             // Request Attachment
             ParentGrid.RequestAttachment(this, GridCheck + Vector2Int.up);
         }
-        else if (ParentGrid.GetTileKeyAtGridPosition(GridCheck) != 0)
+        else if (ParentGrid.GetTileKeyAtGridCoordinate(GridCheck) != 0)
         {
             // Request Attachment
             ParentGrid.RequestAttachment(this, GridCheck + Vector2Int.up);
@@ -133,6 +145,17 @@ public abstract class Griddable
             SetGridPosition(newGridPosition);
         }
 
+    }
+
+    protected void RequestDestruction()
+    {
+        state = State.Dying;
+        ParentGrid.DestroyRequest(this);
+    }
+
+    public void Destroy()
+    {
+        GameObject.Destroy(GO);
     }
 
 }
