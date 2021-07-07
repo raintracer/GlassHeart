@@ -1,7 +1,5 @@
 Done:
 
-
 Todo:
-Next Commit:
-Implement Free Tiles
+Next Commit: Temporary Tile for Swapping Functions
 

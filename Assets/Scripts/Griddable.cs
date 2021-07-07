@@ -5,14 +5,14 @@ using UnityEngine;
 public abstract class Griddable
 {
 
-    readonly protected int KeyID;
+    public int KeyID { get; private set; }
     readonly protected GameObject GO;
     readonly protected SpriteRenderer SR;
     readonly protected Mono mono;
     readonly protected PuzzleGrid ParentGrid;
 
-    protected Vector2 GridPosition;
-
+    public Vector2 GridPosition { get; private set; }
+    const float FALL_SPEED = 0.2F;
     public abstract bool Swappable { get; protected set; }
     readonly static int SWAP_FRAMES = 8;
     protected enum State { Free, Set, Swapping, Clearing, Special }
@@ -70,6 +70,8 @@ public abstract class Griddable
 
     private IEnumerator AnimateSwap(bool SwapRight)
     {
+        
+        Debug.Log("Tile Requesting Update (ID): " + KeyID);
 
         SR.material = GameAssets.Material.Swap;
         float SwapOffset, OffsetChange;
@@ -94,6 +96,42 @@ public abstract class Griddable
         SR.material.SetFloat("_Offset", 0f);
         state = State.Set;
         SR.material = GameAssets.Material.Default;
+
+        ParentGrid.PingUpdate(this);
+    }
+
+    public void Unattach()
+    {
+        state = State.Free;
+    }
+
+    public void Attach()
+    {
+        state = State.Set;
+    }
+
+    public void FreeFall()
+    {
+        // Determine predicted new position
+        Vector2 newGridPosition = GridPosition + new Vector2(0, -FALL_SPEED);
+
+        // Determine if new GridPosition intersects a locked Tile
+        Vector2Int GridCheck = new Vector2Int((int)(newGridPosition.x), (int)(newGridPosition.y - ParentGrid.GridScrollOffset));
+
+        if (GridCheck.y < 0)
+        {
+            // Request Attachment
+            ParentGrid.RequestAttachment(this, GridCheck + Vector2Int.up);
+        }
+        else if (ParentGrid.GetTileKeyAtGridPosition(GridCheck) != 0)
+        {
+            // Request Attachment
+            ParentGrid.RequestAttachment(this, GridCheck + Vector2Int.up);
+        }
+        else
+        {
+            SetGridPosition(newGridPosition);
+        }
 
     }
 
