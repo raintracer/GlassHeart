@@ -16,7 +16,7 @@ public abstract class Griddable
     public Vector2 GridPosition { get; private set; }
     public Vector2Int GridCoordinate { get; private set; }
 
-    const float FALL_SPEED = 0.4F;
+    const float FALL_SPEED = 0.01F;
     public abstract bool Swappable { get; protected set; }
     readonly static int SWAP_FRAMES = 4;
     protected enum State { Free, Set, Swapping, Clearing, Dying, Special }
@@ -44,7 +44,7 @@ public abstract class Griddable
 
     public void ShiftPosition(float _ShiftAmount)
     {
-        if (LockedToGrid) Debug.LogError("Tried to shift a locked Griddable. Unlock first.");
+        //if (LockedToGrid) Debug.LogError("Tried to shift a locked Griddable. Unlock first.");
         GridPosition += new Vector2(0, _ShiftAmount);
         UpdateObjectPosition();
     }
@@ -56,7 +56,7 @@ public abstract class Griddable
     }
 
     protected void UpdateObjectPosition() {
-        GO.transform.position = ParentGrid.GridWorldPosition + GridPosition;
+        GO.transform.position = ParentGrid.GridWorldPosition + GridPosition + new Vector2(0, ParentGrid.GridScrollOffset);
     }
 
     public bool SwappingAllowed()

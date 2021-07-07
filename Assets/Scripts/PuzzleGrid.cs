@@ -24,7 +24,8 @@ public class PuzzleGrid : MonoBehaviour
     private bool ScrollBoost = false;
 
     // Constants
-    private const int CEILING_ROW = 12;
+    private const int CEILING_ROW = 13;
+    private const int FLOOR_ROW = 2;
     private const float SCROLL_BOOST_FACTOR = 20f;
 
     // These properties affect the rendering of Griddables
@@ -35,7 +36,7 @@ public class PuzzleGrid : MonoBehaviour
 
     void Awake()
     {
-        GridWorldPosition = transform.position + new Vector3(1, 0, 0);
+        GridWorldPosition = transform.position + new Vector3(1, -1, 0);
         Tiles = new Dictionary<int, Griddable>();
         UnlockedTiles = new List<int>();
         GridRequests = new List<GridRequest>();
@@ -118,9 +119,9 @@ public class PuzzleGrid : MonoBehaviour
         if (_Movement.SqrMagnitude() > 0) {
             Vector2Int OldCursorPosition = CursorPosition;
             CursorPosition += new Vector2Int((int)_Movement.x, (int)_Movement.y);
-            CursorPosition.Clamp(new Vector2Int(0, 1), new Vector2Int(GridSize.x - 2, CEILING_ROW));
+            CursorPosition.Clamp(new Vector2Int(0, FLOOR_ROW), new Vector2Int(GridSize.x - 2, CEILING_ROW));
             UpdateCursorPosition();
-            //if (CursorPosition != OldCursorPosition) GameAssets.Sound.CursorClick.Play();
+             if (CursorPosition != OldCursorPosition) GameAssets.Sound.CursorClick.Play();
         }
     }
 
@@ -208,9 +209,9 @@ public class PuzzleGrid : MonoBehaviour
         Tiles= new Dictionary<int, Griddable>();
 
         // CREATE STARTING LOCKED TILES
-        for (int i = 3; i < GridSize.x; i++)
+        for (int i = 0; i < GridSize.x; i++)
         {
-            for (int j = 0; j < 8; j++)
+            for (int j = 0; j < i*2 + 2; j++)
             {
                 TileGrid[i, j] = CreateNewBasicTile(GameAssets.GetRandomTileColor(), new Vector2(i,j), true);
             }
@@ -303,7 +304,7 @@ public class PuzzleGrid : MonoBehaviour
         if (TileKey != 0)
         {
             if (!Tiles.TryGetValue(TileKey, out Griddable TileTemp)) Debug.LogError("Grid Tile not Found: " + TileGrid[x, y]);
-            TileTemp.SetGridPosition(new Vector2(x, y + GridScrollOffset));
+            TileTemp.SetGridPosition(new Vector2(x, y));
             TileTemp.ChangeAttachmentCoordinate(new Vector2Int(x, y));
         }
     }
@@ -394,7 +395,14 @@ public class PuzzleGrid : MonoBehaviour
                 else TileGrid[i, j] = CreateNewBasicTile(GameAssets.GetRandomTileColor(), new Vector2(i, j), true);
             }
         }
-        CursorPosition.y += 1;
+
+        // SHIFT FREE TILES UP
+        for (int i = 0; i < UnlockedTiles.Count; i++)
+        {
+            GetTileByID(UnlockedTiles[i]).ShiftPosition(1f);
+        }
+
+        if (CursorPosition.y < CEILING_ROW) CursorPosition.y += 1;
         foreach (GridRequest _GridRequest in GridRequests) _GridRequest.ShiftReference(1);
     }
 
@@ -409,7 +417,14 @@ public class PuzzleGrid : MonoBehaviour
                 else TileGrid[i, j] = TileGrid[i, j + 1];
             }
         }
-        CursorPosition.y -= 1;
+
+        // SHIFT FREE TILES UP
+        for (int i = 0; i < UnlockedTiles.Count; i++)
+        {
+            GetTileByID(UnlockedTiles[i]).ShiftPosition(1f);
+        }
+
+        if (CursorPosition.y > FLOOR_ROW) CursorPosition.y += 1;
         foreach (GridRequest _GridRequest in GridRequests) _GridRequest.ShiftReference(-1);
     }
 
@@ -417,22 +432,22 @@ public class PuzzleGrid : MonoBehaviour
     {
 
         // SHIFT UNLOCKED TILE POSITIONS
-        foreach (Griddable Tile in Tiles.Values)
-        {
-            if (!Tile.LockedToGrid) Tile.ShiftPosition(_ScrollAmount);
-        }
+        //foreach (Griddable Tile in Tiles.Values)
+        //{
+        //    if (!Tile.LockedToGrid) Tile.ShiftPosition(_ScrollAmount);
+        //}
 
         // SHIFT GRID IF NECESSARY
         GridScrollOffset += _ScrollAmount;
         while (GridScrollOffset >= 1.0)
         {
-            ShiftGridUp();
             GridScrollOffset--;
+            ShiftGridUp();
         }
         while (GridScrollOffset < 0)
         {
-            ShiftGridDown();
             GridScrollOffset++;
+            ShiftGridDown();
         }
 
         UpdateGridTiles();
