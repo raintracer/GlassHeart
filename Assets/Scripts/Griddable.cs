@@ -10,6 +10,7 @@ public abstract class Griddable
     protected SpriteRenderer SR;
     protected PuzzleGrid ParentGrid;
     protected Vector2 GridPosition;
+    public abstract bool Swappable { get; protected set; }
     protected enum State { Free, Set, Swapping, Clearing, Special}
     public bool LockedToGrid { get; private set; }
     
@@ -41,6 +42,11 @@ public abstract class Griddable
     {
         GridPosition = newGridPosition;
         GO.transform.position = ParentGrid.GridWorldPosition + GridPosition;
+    }
+
+    public bool SwappingAllowed()
+    {
+        return Swappable;
     }
 
 }
