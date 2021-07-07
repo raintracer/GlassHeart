@@ -4,21 +4,22 @@ using UnityEngine;
 
 public class PuzzleGrid : MonoBehaviour
 {
-
-    private Dictionary<int, PuzzleTile> Tiles;
-    public Vector2 GridWorldPosition { get; private set; }
-    public float GridScrollOffset { get; private set; }
-    
+  
     private int[,] TileGrid;
-    Vector2Int GridSize = new Vector2Int(6, 15);
+    private Dictionary<int, PuzzleTile> Tiles;
+    private Vector2Int GridSize = new Vector2Int(6, 15);
     private int NextTileID = 1;
+    
+    private ControlMap Inputs;
+    private Vector2Int CursorPosition = new Vector2Int(2, 4);
+    private GameObject CursorObject;
     private const int CEILING_ROW = 12;
 
-    ControlMap Inputs;
 
-    // CURSOR
-    private Vector2Int CursorPosition = new Vector2Int(2, 4);
-    GameObject CursorObject;
+    public Vector2 GridWorldPosition { get; private set; }
+    public float GridScrollOffset { get; private set; }
+
+    #region Unity Events
 
     void Awake()
     {
@@ -41,7 +42,10 @@ public class PuzzleGrid : MonoBehaviour
     {
         if (!RowContainsTiles(CEILING_ROW)) Scroll(0.01f);
     }
+    
+    #endregion
 
+    #region Cursor Methods
     void MoveCursor(Vector2 _Movement)
     {
         if (_Movement.SqrMagnitude() > 0) {
@@ -67,6 +71,9 @@ public class PuzzleGrid : MonoBehaviour
         UpdateTileAtGridPosition(CursorX + 1, CursorY);
     }
 
+    #endregion
+
+    #region Tile Methods
     PuzzleTile GetTileByGridPosition(Vector2Int GridPosition)
     {
         int TileKey = TileGrid[GridPosition.x, GridPosition.y];
@@ -119,7 +126,46 @@ public class PuzzleGrid : MonoBehaviour
         // W R I T E   T H I S
     }
 
-    void ShiftGridUp ()
+    void UpdateCursorPosition()
+    {
+        CursorObject.transform.position = CursorPosition + new Vector2(0, GridScrollOffset) + GridWorldPosition;
+    }
+
+    void UpdateGridTiles()
+    {
+        for (int j = 0; j < GridSize.y; j++)
+        {
+            for (int i = 0; i < GridSize.x; i++)
+            {
+                UpdateTileAtGridPosition(i, j);
+            }
+        }
+    }
+
+    void UpdateTileAtGridPosition(int x, int y)
+    {
+        int TileKey = TileGrid[x, y];
+        if (TileKey != 0)
+        {
+            if (!Tiles.TryGetValue(TileKey, out PuzzleTile TileTemp)) Debug.LogError("Grid Tile not Found: " + TileGrid[x, y]);
+            TileTemp.SetGridPosition(new Vector2(x, y + GridScrollOffset));
+        }
+    }
+
+    bool RowContainsTiles(int RowIndex)
+    {
+        for (int i = 0; i < GridSize.x; i++)
+        {
+            if (TileGrid[i, RowIndex] != 0) return true;
+        }
+        return false;
+    }
+
+    #endregion
+
+    #region Scrolling
+
+    void ShiftGridUp()
     {
         // SHIFT LOCKED TILES UP
         for (int j = GridSize.y - 1; j >= 0; j--)
@@ -174,39 +220,6 @@ public class PuzzleGrid : MonoBehaviour
         UpdateCursorPosition();
     }
 
-    void UpdateCursorPosition()
-    {
-        CursorObject.transform.position = CursorPosition + new Vector2(0, GridScrollOffset) + GridWorldPosition;
-    }
-
-    void UpdateGridTiles()
-    {
-        for (int j = 0; j < GridSize.y; j++)
-        {
-            for (int i = 0; i < GridSize.x; i++)
-            {
-                UpdateTileAtGridPosition(i, j);
-            }
-        }
-    }
-
-    void UpdateTileAtGridPosition(int x, int y)
-    {
-        int TileKey = TileGrid[x, y];
-        if (TileKey != 0)
-        {
-            if (!Tiles.TryGetValue(TileKey, out PuzzleTile TileTemp)) Debug.LogError("Grid Tile not Found: " + TileGrid[x, y]);
-            TileTemp.SetGridPosition(new Vector2(x, y + GridScrollOffset));
-        }
-    }
-
-    bool RowContainsTiles(int RowIndex)
-    {
-        for (int i = 0; i < GridSize.x; i++)
-        {
-            if (TileGrid[i, RowIndex] != 0) return true;
-        }
-        return false;
-    }
+    #endregion
 
 }
