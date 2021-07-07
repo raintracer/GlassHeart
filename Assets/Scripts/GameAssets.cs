@@ -20,26 +20,13 @@ static public class GameAssets
         LoadSprites();
     }
 
-    private static void LoadSounds()
-    {
-        Sounds = new Dictionary<string, Sound>
-        {
-            ["CursorClick"] = new Sound(GO.AddComponent<AudioSource>(), "CursorClick", 0.5f),
-        };
-    }
-
-
-    public static Sound GetSound(string _SoundName)
-    {
-        if (!Sounds.TryGetValue(_SoundName, out Sound SoundTemp)) Debug.LogError("Sound was not found: " + _SoundName);
-        return SoundTemp;
-    }
-
+    #region Materials
     private static void LoadMaterials()
     {
         Materials = new Dictionary<string, UnityEngine.Material>
         {
-            // Example - ["Arena Grid"] = Resources.Load<UnityEngine.Material>("Arena Grid"),
+           //["SpriteDefault"] = Resources.Load<UnityEngine.Material>("Arena Grid"),
+           ["Swap"] = Resources.Load<UnityEngine.Material>("Swap")
         };
     }
 
@@ -48,6 +35,16 @@ static public class GameAssets
         if (!Materials.TryGetValue(_MaterialName, out UnityEngine.Material MaterialTemp)) Debug.LogError("Material was not found: " + _MaterialName);
         return MaterialTemp;
     }
+
+    public static class Material
+    {
+        // Example - public static UnityEngine.Material ArenaGrid { get => GetMaterial("Arena Grid"); }
+        public static UnityEngine.Material Swap { get => GetMaterial("Swap"); }
+    }
+
+    #endregion
+
+    #region Sprites
 
     private static void LoadSprites()
     {
@@ -79,6 +76,23 @@ static public class GameAssets
         public static UnityEngine.Sprite TilePurple { get => GetSprite("TilePurple"); }
     }
 
+    #endregion
+
+    #region Sounds
+
+    private static void LoadSounds()
+    {
+        Sounds = new Dictionary<string, Sound>
+        {
+            ["CursorClick"] = new Sound(GO.AddComponent<AudioSource>(), "CursorClick", 0.5f),
+        };
+    }
+    public static Sound GetSound(string _SoundName)
+    {
+        if (!Sounds.TryGetValue(_SoundName, out Sound SoundTemp)) Debug.LogError("Sound was not found: " + _SoundName);
+        return SoundTemp;
+    }
+
     public class Sound
     {
 
@@ -105,8 +119,6 @@ static public class GameAssets
             set { Source.loop = value; }
         }
 
-
-
         public Sound(AudioSource Source, string ClipName, float Volume, bool Loop = false, float Pitch = 1.00f)
         {
             this.Source = Source;
@@ -129,7 +141,9 @@ static public class GameAssets
 
     }
 
-    // GAME SPECIFIC METHODS
+    #endregion
+
+    #region Glassheart Methods
 
     public static UnityEngine.Sprite GetSpriteByTileColor(PuzzleTile.TileColor _Color)
     {
@@ -150,6 +164,6 @@ static public class GameAssets
         return (PuzzleTile.TileColor) Random.Range((int)0, (int)6);
     }
 
-
+    #endregion
 
 }

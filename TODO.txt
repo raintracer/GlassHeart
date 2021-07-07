@@ -1,7 +1,9 @@
-Basic Cursor Switching
-
-TODO:
-
-
 Done:
 
+
+Todo:
+Next Commit:
+Revert Griddables to default sprite after Swap Animation
+
+Later:
+Implement Free Tiles

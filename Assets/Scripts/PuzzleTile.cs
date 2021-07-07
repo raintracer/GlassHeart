@@ -12,6 +12,7 @@ public class PuzzleTile : Griddable
     public PuzzleTile(PuzzleGrid Grid, int _Key, TileColor _Color, Vector2 _GridPos, bool _LockedToGrid) : base(Grid, _Key, _GridPos, _LockedToGrid)
     {
         Color = _Color;
+        Swappable = true;
         UpdateSprite();
     }
 

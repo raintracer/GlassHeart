@@ -63,12 +63,27 @@ public class PuzzleGrid : MonoBehaviour
         int CursorX = CursorPosition.x;
         int CursorY = CursorPosition.y;
         int TempValue;
+
+        Griddable TileA = GetTileByGridPosition(CursorPosition);
+        Griddable TileB = GetTileByGridPosition(CursorPosition + Vector2Int.right);
+
+        // CONFIRM BOTH GRIDDABLES ARE SWAPPABLE OR NULL
+        if (TileA != null && !TileA.SwappingAllowed()) return;
+        if (TileB != null && !TileB.SwappingAllowed()) return;
+
+        // SWAP VALUES
         TempValue = TileGrid[CursorX, CursorY];
         TileGrid[CursorX, CursorY] = TileGrid[CursorX + 1, CursorY];
         TileGrid[CursorX + 1, CursorY] = TempValue;
 
+        // UPDATE POSITIONS
         UpdateTileAtGridPosition(CursorX, CursorY);
         UpdateTileAtGridPosition(CursorX + 1, CursorY);
+
+        // SET STATES
+        TileA.Swap(true);
+        TileB.Swap(false);
+
     }
 
     #endregion
@@ -216,7 +231,6 @@ public class PuzzleGrid : MonoBehaviour
         }
 
         UpdateGridTiles();
-
         UpdateCursorPosition();
     }
 
