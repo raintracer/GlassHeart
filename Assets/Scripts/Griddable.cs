@@ -16,9 +16,9 @@ public abstract class Griddable
     public Vector2 GridPosition { get; private set; }
     public Vector2Int GridCoordinate { get; private set; }
 
-    const float FALL_SPEED = 0.2F;
+    const float FALL_SPEED = 0.4F;
     public abstract bool Swappable { get; protected set; }
-    readonly static int SWAP_FRAMES = 8;
+    readonly static int SWAP_FRAMES = 4;
     protected enum State { Free, Set, Swapping, Clearing, Dying, Special }
     protected State state;
     public bool LockedToGrid { get; private set; }

@@ -2,5 +2,4 @@ Done:
 
 
 Todo:
-Block swapping by free-falling blocks
 

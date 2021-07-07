@@ -67,22 +67,23 @@ public class PuzzleGrid : MonoBehaviour
             if (GridRequests[i].Type == GridRequestType.Update)
             {
 
+                // Fall if there is a tile and no tile underneath 
                 Vector2Int TileCoordinate = GridRequests[i].Coordinate;
                 if (TileCoordinate.y > 0)
                 {
-                    if (CoordinateContainsTile(TileCoordinate) && !CoordinateContainsTile(TileCoordinate + Vector2Int.down))
+                    if (CoordinateContainsLockedTile(TileCoordinate) && !CoordinateContainsLockedTile(TileCoordinate + Vector2Int.down))
                     {
                         UnattachTileFromGrid(TileCoordinate);
-                        GridRequests.Add(new GridRequest { Type = GridRequestType.Update, Coordinate = TileCoordinate + Vector2Int.up } );
+                        if (TileCoordinate.y < GridSize.y - 1) GridRequests.Add(new GridRequest { Type = GridRequestType.Update, Coordinate = TileCoordinate + Vector2Int.up } );
                     }
                 }
 
+                // Tell above tile to fall if there is no tile, and there is a tile above
                 if (TileCoordinate.y < GridSize.y - 1)
                 {
                     // If the updated Tile is empty, check for an up-neighbor and unattach. Add that tile to the new requests hash
-                    if (!CoordinateContainsTile(TileCoordinate) && CoordinateContainsTile(TileCoordinate + Vector2Int.up))
+                    if (!CoordinateContainsLockedTile(TileCoordinate) && CoordinateContainsLockedTile(TileCoordinate + Vector2Int.up))
                     {
-                        UnattachTileFromGrid(TileCoordinate + Vector2Int.up);
                         GridRequests.Add(new GridRequest { Type = GridRequestType.Update, Coordinate = TileCoordinate + Vector2Int.up });
                     }
                 }
@@ -100,7 +101,7 @@ public class PuzzleGrid : MonoBehaviour
         }
 
         // Scroll Grid
-        if (!RowContainsTiles(CEILING_ROW)) Scroll(0.01f);
+        if (!RowContainsLockedTiles(CEILING_ROW)) Scroll(0.01f);
 
     }
     
@@ -130,6 +131,10 @@ public class PuzzleGrid : MonoBehaviour
         int CursorY = CursorPosition.y;
         int TempValue;
 
+        // CONFIRM NEITHER GRID-SPACE CONTAINS A FREE TILE
+        if (CoordinateContainsFreeTile(CursorPosition) || CoordinateContainsFreeTile(CursorPosition + Vector2Int.right)) return;
+
+        // CAPTURE TILES CORRESPONDING TO THE GRID-SPACES
         Griddable TileA = GetTileByGridPosition(CursorPosition);
         Griddable TileB = GetTileByGridPosition(CursorPosition + Vector2Int.right);
 
@@ -306,7 +311,7 @@ public class PuzzleGrid : MonoBehaviour
         AttachTileToGrid(_Tile, _GridPosition);
     }
 
-    private bool RowContainsTiles(int RowIndex)
+    private bool RowContainsLockedTiles(int RowIndex)
     {
         for (int i = 0; i < GridSize.x; i++)
         {
@@ -315,9 +320,31 @@ public class PuzzleGrid : MonoBehaviour
         return false;
     }
 
-    private bool CoordinateContainsTile(Vector2Int _GridCoordinate)
+    private bool CoordinateContainsLockedTile(Vector2Int _GridCoordinate)
     {
         return (TileGrid[_GridCoordinate.x, _GridCoordinate.y] != 0);
+    }
+
+    private bool CoordinateContainsFreeTile(Vector2Int _GridCoordinate)
+    {
+        Griddable _Tile;
+        float tx, ty, tw, th;                   // Tile Position and Dimensions
+        float lx = _GridCoordinate.x + 0.5f;    // Grid-space midpoint x
+        float pay = _GridCoordinate.y + 1f;     // Gris-space top y
+        float pby = _GridCoordinate.y;          // Grid-space bottom y
+        for (int i = 0; i < UnlockedTiles.Count; i++)
+        {
+            _Tile = GetTileByID(UnlockedTiles[i]);
+            tx = _Tile.GridPosition.x;
+            ty = _Tile.GridPosition.y;
+            tw = 1f;
+            th = 1f;
+
+            // If tile box overlaps vertical line in gridspace horizontal center, return true
+            if (tx < lx && (tx + tw > lx) && ((ty > pby && ty < pay) || (ty + th > pby && ty + th < pay))) return true;
+
+        }
+        return false; // Return false if no free tiles meet conditions
     }
 
     public void PingUpdate(Griddable _Tile)
