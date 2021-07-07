@@ -29,9 +29,11 @@ public class PuzzleGrid : MonoBehaviour
         CursorObject = Instantiate(Resources.Load<GameObject>("PuzzleCursorPrefab"), transform);
         UpdateCursorPosition();
 
+        // INITIALIZE CONTROLS
         Inputs = new ControlMap();
         Inputs.Enable();
         Inputs.Player.MoveCursor.performed += ctx => MoveCursor(ctx.ReadValue<Vector2>());
+        Inputs.Player.SwitchAtCursor.started += ctx => SwitchAtCursor();
 
     }
 
@@ -47,8 +49,30 @@ public class PuzzleGrid : MonoBehaviour
             CursorPosition += new Vector2Int((int)_Movement.x, (int)_Movement.y);
             CursorPosition.Clamp(new Vector2Int(0, 1), new Vector2Int(GridSize.x - 2, CEILING_ROW));
             UpdateCursorPosition();
-            // if (CursorPosition != OldCursorPosition) GameAssets.Sound.CursorClick.Play();
+            //if (CursorPosition != OldCursorPosition) GameAssets.Sound.CursorClick.Play();
         }
+    }
+
+    void SwitchAtCursor()
+    {
+
+        int CursorX = CursorPosition.x;
+        int CursorY = CursorPosition.y;
+        int TempValue;
+        TempValue = TileGrid[CursorX, CursorY];
+        TileGrid[CursorX, CursorY] = TileGrid[CursorX + 1, CursorY];
+        TileGrid[CursorX + 1, CursorY] = TempValue;
+
+        UpdateTileAtGridPosition(CursorX, CursorY);
+        UpdateTileAtGridPosition(CursorX + 1, CursorY);
+    }
+
+    PuzzleTile GetTileByGridPosition(Vector2Int GridPosition)
+    {
+        int TileKey = TileGrid[GridPosition.x, GridPosition.y];
+        if (TileKey == 0) return null;
+        if (!Tiles.TryGetValue(TileGrid[GridPosition.x, GridPosition.y], out PuzzleTile TileTemp)) Debug.LogError("Grid Tile not Found: " + TileGrid[GridPosition.x, GridPosition.y]);
+        return TileTemp;
     }
 
     void CreateInitialTileGrid()
@@ -126,10 +150,10 @@ public class PuzzleGrid : MonoBehaviour
     void Scroll(float _ScrollAmount)
     {
 
-        // UPDATE TILE POSITIONS
+        // SHIFT UNLOCKED TILE POSITIONS
         foreach (PuzzleTile Tile in Tiles.Values)
         {
-            if (Tile.LockedToGrid) Tile.ShiftPosition(_ScrollAmount);
+            if (!Tile.LockedToGrid) Tile.ShiftPosition(_ScrollAmount);
         }
 
         // SHIFT GRID IF NECESSARY
@@ -161,12 +185,18 @@ public class PuzzleGrid : MonoBehaviour
         {
             for (int i = 0; i < GridSize.x; i++)
             {
-                int TileKey = TileGrid[i, j];
-                if (TileKey != 0) {
-                    if (!Tiles.TryGetValue(TileKey, out PuzzleTile TileTemp)) Debug.LogError("Grid Tile not Found: " + TileGrid[i, j]);
-                    TileTemp.SetGridPosition(new Vector2(i, j + GridScrollOffset));
-                }
+                UpdateTileAtGridPosition(i, j);
             }
+        }
+    }
+
+    void UpdateTileAtGridPosition(int x, int y)
+    {
+        int TileKey = TileGrid[x, y];
+        if (TileKey != 0)
+        {
+            if (!Tiles.TryGetValue(TileKey, out PuzzleTile TileTemp)) Debug.LogError("Grid Tile not Found: " + TileGrid[x, y]);
+            TileTemp.SetGridPosition(new Vector2(x, y + GridScrollOffset));
         }
     }
 

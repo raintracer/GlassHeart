@@ -1,0 +1,8 @@
+Basic Cursor Switching
+
+TODO:
+Update Position on Switching
+Function to get a Tile at a GridPosition
+
+Done:
+Added SwitchAtCursor method and connected to control map

@@ -42,6 +42,7 @@ public class PuzzleTile
     public void SetGridPosition(Vector2 newGridPosition)
     {
         GridPosition = newGridPosition;
+        GO.transform.position = ParentGrid.GridWorldPosition + GridPosition;
     }
 
 }
