@@ -6,7 +6,8 @@ public class PuzzleGrid : MonoBehaviour
 {
   
     private int[,] TileGrid;
-    private Dictionary<int, PuzzleTile> Tiles;
+    private List<Griddable> UnlockedTiles; 
+    private Dictionary<int, Griddable> Tiles;
     private Vector2Int GridSize = new Vector2Int(6, 15);
     private int NextTileID = 1;
     
@@ -24,7 +25,7 @@ public class PuzzleGrid : MonoBehaviour
     void Awake()
     {
         GridWorldPosition = transform.position + new Vector3(1, 0, 0);
-        Tiles = new Dictionary<int, PuzzleTile>();
+        Tiles = new Dictionary<int, Griddable>();
         CreateInitialTileGrid();
         
         CursorObject = Instantiate(Resources.Load<GameObject>("PuzzleCursorPrefab"), transform);
@@ -89,11 +90,11 @@ public class PuzzleGrid : MonoBehaviour
     #endregion
 
     #region Tile Methods
-    PuzzleTile GetTileByGridPosition(Vector2Int GridPosition)
+    Griddable GetTileByGridPosition(Vector2Int GridPosition)
     {
         int TileKey = TileGrid[GridPosition.x, GridPosition.y];
         if (TileKey == 0) return null;
-        if (!Tiles.TryGetValue(TileGrid[GridPosition.x, GridPosition.y], out PuzzleTile TileTemp)) Debug.LogError("Grid Tile not Found: " + TileGrid[GridPosition.x, GridPosition.y]);
+        if (!Tiles.TryGetValue(TileGrid[GridPosition.x, GridPosition.y], out Griddable TileTemp)) Debug.LogError("Grid Tile not Found: " + TileGrid[GridPosition.x, GridPosition.y]);
         return TileTemp;
     }
 
@@ -110,8 +111,8 @@ public class PuzzleGrid : MonoBehaviour
             }
         }
 
-        // INITIALIZE UNLOCKED TILES
-        Tiles= new Dictionary<int, PuzzleTile>();
+        // INITIALIZE TILES
+        Tiles= new Dictionary<int, Griddable>();
 
         // CREATE STARTING LOCKED TILES
         for (int i = 0; i < GridSize.x; i++)
@@ -124,14 +125,14 @@ public class PuzzleGrid : MonoBehaviour
 
     }
 
-    int CreateNewTile(PuzzleTile.TileColor _Color, Vector2 _GridPosition, bool _LockedToGrid)
+    int CreateNewTile(BasicTile.TileColor _Color, Vector2 _GridPosition, bool _LockedToGrid)
     {
         int TileID = NextTileID;
-        Tiles.Add(NextTileID++, new PuzzleTile(this, TileID, _Color, _GridPosition, _LockedToGrid));
+        Tiles.Add(NextTileID++, new BasicTile(this, TileID, _Color, _GridPosition, _LockedToGrid));
         return TileID;
     }
 
-    void AttachTileToGrid(PuzzleTile _Tile, Vector2Int _GridPosition)
+    void AttachTileToGrid(Griddable _Tile, Vector2Int _GridPosition)
     {
         // W R I T E   T H I S
     }
@@ -162,7 +163,7 @@ public class PuzzleGrid : MonoBehaviour
         int TileKey = TileGrid[x, y];
         if (TileKey != 0)
         {
-            if (!Tiles.TryGetValue(TileKey, out PuzzleTile TileTemp)) Debug.LogError("Grid Tile not Found: " + TileGrid[x, y]);
+            if (!Tiles.TryGetValue(TileKey, out Griddable TileTemp)) Debug.LogError("Grid Tile not Found: " + TileGrid[x, y]);
             TileTemp.SetGridPosition(new Vector2(x, y + GridScrollOffset));
         }
     }
@@ -212,7 +213,7 @@ public class PuzzleGrid : MonoBehaviour
     {
 
         // SHIFT UNLOCKED TILE POSITIONS
-        foreach (PuzzleTile Tile in Tiles.Values)
+        foreach (BasicTile Tile in Tiles.Values)
         {
             if (!Tile.LockedToGrid) Tile.ShiftPosition(_ScrollAmount);
         }

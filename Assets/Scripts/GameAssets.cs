@@ -150,23 +150,23 @@ static public class GameAssets
 
     #region Glassheart Methods
 
-    public static UnityEngine.Sprite GetSpriteByTileColor(PuzzleTile.TileColor _Color)
+    public static UnityEngine.Sprite GetSpriteByTileColor(BasicTile.TileColor _Color)
     {
         return _Color switch
         {
-            PuzzleTile.TileColor.Red    => Sprite.TileRed,
-            PuzzleTile.TileColor.Yellow => Sprite.TileYellow,
-            PuzzleTile.TileColor.Green  => Sprite.TileGreen,
-            PuzzleTile.TileColor.Blue   => Sprite.TileBlue,
-            PuzzleTile.TileColor.Indigo => Sprite.TileIndigo,
-            PuzzleTile.TileColor.Purple => Sprite.TilePurple,
+            BasicTile.TileColor.Red    => Sprite.TileRed,
+            BasicTile.TileColor.Yellow => Sprite.TileYellow,
+            BasicTile.TileColor.Green  => Sprite.TileGreen,
+            BasicTile.TileColor.Blue   => Sprite.TileBlue,
+            BasicTile.TileColor.Indigo => Sprite.TileIndigo,
+            BasicTile.TileColor.Purple => Sprite.TilePurple,
             _ => Sprite.TileRed,
         };
     }
 
-    public static PuzzleTile.TileColor GetRandomTileColor()
+    public static BasicTile.TileColor GetRandomTileColor()
     {
-        return (PuzzleTile.TileColor) Random.Range((int)0, (int)6);
+        return (BasicTile.TileColor) Random.Range((int)0, (int)6);
     }
 
     #endregion

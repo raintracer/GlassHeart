@@ -12,6 +12,7 @@ public abstract class Griddable
     readonly protected PuzzleGrid ParentGrid;
 
     protected Vector2 GridPosition;
+
     public abstract bool Swappable { get; protected set; }
     readonly static int SWAP_FRAMES = 8;
     protected enum State { Free, Set, Swapping, Clearing, Special }
@@ -26,7 +27,7 @@ public abstract class Griddable
         LockedToGrid = newLockedToGrid;
         KeyID = newKeyID;
 
-        GO = Object.Instantiate<GameObject>(Resources.Load<GameObject>("PuzzleTile"), ParentGrid.transform);
+        GO = Object.Instantiate<GameObject>(Resources.Load<GameObject>("BasicTile"), ParentGrid.transform);
         SR = GO.GetComponent<SpriteRenderer>();
         mono = GO.AddComponent<Mono>(); 
         GO.transform.position = ParentGrid.GridWorldPosition + GridPosition;
