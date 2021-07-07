@@ -1,5 +1,6 @@
 Done:
-
+Added Gamepad Support ;)
+Fixed occupied tile attachment issue: Free-falling y position check was incorrectly incorporating GridScrollPosition
 
 Todo:
 

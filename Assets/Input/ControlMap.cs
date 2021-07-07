@@ -33,6 +33,14 @@ public class @ControlMap : IInputActionCollection, IDisposable
                     ""expectedControlType"": ""Button"",
                     ""processors"": """",
                     ""interactions"": """"
+                },
+                {
+                    ""name"": ""ScrollBoost"",
+                    ""type"": ""Button"",
+                    ""id"": ""b9cc71c3-1981-4521-9659-c25516a5351e"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": ""Press(behavior=2)""
                 }
             ],
             ""bindings"": [
@@ -147,6 +155,61 @@ public class @ControlMap : IInputActionCollection, IDisposable
                     ""isPartOfComposite"": true
                 },
                 {
+                    ""name"": ""Gamepad"",
+                    ""id"": ""f0bdf56b-b2da-4155-819d-4289b977ead8"",
+                    ""path"": ""2DVector"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""MoveCursor"",
+                    ""isComposite"": true,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": ""up"",
+                    ""id"": ""fc88ead1-d119-436a-8e7c-d046aa957ab4"",
+                    ""path"": ""<Gamepad>/dpad/up"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""MoveCursor"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""down"",
+                    ""id"": ""977933c4-ca35-45cc-9e68-cadd4ae06128"",
+                    ""path"": ""<Gamepad>/dpad/down"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""MoveCursor"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""left"",
+                    ""id"": ""b3b73466-9dcf-42a8-b1e7-9b4b506453aa"",
+                    ""path"": ""<Gamepad>/dpad/left"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""MoveCursor"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""right"",
+                    ""id"": ""8d7884b3-ea5d-4376-9cd2-b7d0d8ca38ca"",
+                    ""path"": ""<Gamepad>/dpad/right"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""MoveCursor"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
                     ""name"": """",
                     ""id"": ""f3d952b8-a5d6-4b54-819e-6adce7c4e52f"",
                     ""path"": ""<Keyboard>/space"",
@@ -154,6 +217,28 @@ public class @ControlMap : IInputActionCollection, IDisposable
                     ""processors"": """",
                     ""groups"": """",
                     ""action"": ""SwitchAtCursor"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""79279d19-a4a4-4a45-bdc4-22c9926eb93f"",
+                    ""path"": ""<Gamepad>/buttonWest"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""SwitchAtCursor"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""7394b86e-61ac-4187-bd6c-595c0774849e"",
+                    ""path"": ""<Gamepad>/buttonSouth"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""ScrollBoost"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -166,6 +251,7 @@ public class @ControlMap : IInputActionCollection, IDisposable
         m_Player = asset.FindActionMap("Player", throwIfNotFound: true);
         m_Player_MoveCursor = m_Player.FindAction("MoveCursor", throwIfNotFound: true);
         m_Player_SwitchAtCursor = m_Player.FindAction("SwitchAtCursor", throwIfNotFound: true);
+        m_Player_ScrollBoost = m_Player.FindAction("ScrollBoost", throwIfNotFound: true);
     }
 
     public void Dispose()
@@ -217,12 +303,14 @@ public class @ControlMap : IInputActionCollection, IDisposable
     private IPlayerActions m_PlayerActionsCallbackInterface;
     private readonly InputAction m_Player_MoveCursor;
     private readonly InputAction m_Player_SwitchAtCursor;
+    private readonly InputAction m_Player_ScrollBoost;
     public struct PlayerActions
     {
         private @ControlMap m_Wrapper;
         public PlayerActions(@ControlMap wrapper) { m_Wrapper = wrapper; }
         public InputAction @MoveCursor => m_Wrapper.m_Player_MoveCursor;
         public InputAction @SwitchAtCursor => m_Wrapper.m_Player_SwitchAtCursor;
+        public InputAction @ScrollBoost => m_Wrapper.m_Player_ScrollBoost;
         public InputActionMap Get() { return m_Wrapper.m_Player; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -238,6 +326,9 @@ public class @ControlMap : IInputActionCollection, IDisposable
                 @SwitchAtCursor.started -= m_Wrapper.m_PlayerActionsCallbackInterface.OnSwitchAtCursor;
                 @SwitchAtCursor.performed -= m_Wrapper.m_PlayerActionsCallbackInterface.OnSwitchAtCursor;
                 @SwitchAtCursor.canceled -= m_Wrapper.m_PlayerActionsCallbackInterface.OnSwitchAtCursor;
+                @ScrollBoost.started -= m_Wrapper.m_PlayerActionsCallbackInterface.OnScrollBoost;
+                @ScrollBoost.performed -= m_Wrapper.m_PlayerActionsCallbackInterface.OnScrollBoost;
+                @ScrollBoost.canceled -= m_Wrapper.m_PlayerActionsCallbackInterface.OnScrollBoost;
             }
             m_Wrapper.m_PlayerActionsCallbackInterface = instance;
             if (instance != null)
@@ -248,6 +339,9 @@ public class @ControlMap : IInputActionCollection, IDisposable
                 @SwitchAtCursor.started += instance.OnSwitchAtCursor;
                 @SwitchAtCursor.performed += instance.OnSwitchAtCursor;
                 @SwitchAtCursor.canceled += instance.OnSwitchAtCursor;
+                @ScrollBoost.started += instance.OnScrollBoost;
+                @ScrollBoost.performed += instance.OnScrollBoost;
+                @ScrollBoost.canceled += instance.OnScrollBoost;
             }
         }
     }
@@ -256,5 +350,6 @@ public class @ControlMap : IInputActionCollection, IDisposable
     {
         void OnMoveCursor(InputAction.CallbackContext context);
         void OnSwitchAtCursor(InputAction.CallbackContext context);
+        void OnScrollBoost(InputAction.CallbackContext context);
     }
 }

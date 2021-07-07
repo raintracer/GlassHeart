@@ -21,9 +21,11 @@ public class PuzzleGrid : MonoBehaviour
     private ControlMap Inputs;
     private Vector2Int CursorPosition = new Vector2Int(2, 4);
     private GameObject CursorObject;
+    private bool ScrollBoost = false;
 
     // Constants
     private const int CEILING_ROW = 12;
+    private const float SCROLL_BOOST_FACTOR = 20f;
 
     // These properties affect the rendering of Griddables
     public Vector2 GridWorldPosition { get; private set; }
@@ -47,7 +49,8 @@ public class PuzzleGrid : MonoBehaviour
         Inputs.Enable();
         Inputs.Player.MoveCursor.performed += ctx => MoveCursor(ctx.ReadValue<Vector2>());
         Inputs.Player.SwitchAtCursor.started += ctx => SwitchAtCursor();
-
+        Inputs.Player.ScrollBoost.performed += ctx => ScrollBoost = true;
+        Inputs.Player.ScrollBoost.canceled += ctx => ScrollBoost = false;
     }
 
     void FixedUpdate()
@@ -101,7 +104,9 @@ public class PuzzleGrid : MonoBehaviour
         }
 
         // Scroll Grid
-        if (!RowContainsLockedTiles(CEILING_ROW)) Scroll(0.01f);
+        float ScrollAmount = 0.001f;
+        if (ScrollBoost) ScrollAmount *= SCROLL_BOOST_FACTOR;
+        if (!RowContainsLockedTiles(CEILING_ROW)) Scroll(ScrollAmount);
 
     }
     
@@ -235,7 +240,10 @@ public class PuzzleGrid : MonoBehaviour
         UnlockedTiles.Remove(_Tile.KeyID);
 
         // Make sure the TileGrid position is available (Value 0)
-        if (TileGrid[_GridCoordinate.x, _GridCoordinate.y] != 0) Debug.LogError("Attempted to attach Tile to occupied grid-space.");
+        if (TileGrid[_GridCoordinate.x, _GridCoordinate.y] != 0)
+        {
+            Debug.LogError("Attempted to attach Tile to occupied grid-space: " + _GridCoordinate + ". Occupying Tile Type: " + GetTileByID(TileGrid[_GridCoordinate.x, _GridCoordinate.y]).Type);
+        }
 
         // Attach Tile to Grid And Update Position
         TileGrid[_GridCoordinate.x, _GridCoordinate.y] = _Tile.KeyID;

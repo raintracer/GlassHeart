@@ -128,7 +128,7 @@ public abstract class Griddable
         Vector2 newGridPosition = GridPosition + new Vector2(0, -FALL_SPEED);
 
         // Determine if new GridPosition intersects a locked Tile
-        Vector2Int GridCheck = new Vector2Int((int)(newGridPosition.x), (int)(newGridPosition.y - ParentGrid.GridScrollOffset));
+        Vector2Int GridCheck = new Vector2Int((int)(newGridPosition.x + 0.5f), (int)(newGridPosition.y));
 
         if (GridCheck.y < 0)
         {
