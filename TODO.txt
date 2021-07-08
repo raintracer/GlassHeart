@@ -1,6 +1,15 @@
 Done:
-Added Gamepad Support ;)
-Fixed occupied tile attachment issue: Free-falling y position check was incorrectly incorporating GridScrollPosition
+Truly Fixed Occupied Tile Attachment Error (Is the Nemesis Defeated for Good)
+
+PuzzleGrid wasn't using AttachTileToGrid method when creating new grid tiles. It was assigning directly to the TileGrid array. Fixed this.
+
+Added CompareFreeTileHeightAscending delegate for sorting FreeTiles by ascending height
+
+Sorting free tiles by ascending height before doing free fall and attachment checks corrected only one tile being integrated per fixed frame. This was leading to tiles falling through grid tiles before they were attached. Left occupied tile attachment issue as a debug warning; currently the warning is not firing.
+
+
 
 Todo:
+Add Animation and delay for clearing
+Add visual indication that generating tiles are not yet active
 

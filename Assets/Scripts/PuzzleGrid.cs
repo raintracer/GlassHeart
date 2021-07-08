@@ -125,6 +125,8 @@ public class PuzzleGrid : MonoBehaviour
         // Run Free Tile Physics
         if (UnlockedTiles.Count != 0)
         {
+            // Sort FreeTiles by grid y position in ascending order
+            UnlockedTiles.Sort(CompareFreeTileHeightAscending);
             for (int i = UnlockedTiles.Count - 1; i >= 0; i--)
             {
                 int TileKey = UnlockedTiles[i];
@@ -150,7 +152,6 @@ public class PuzzleGrid : MonoBehaviour
                 {
                     BasicTile _BasicTile = _Tile as BasicTile;
                     ColorGrid[i, j] = _BasicTile.Color;
-                    Debug.Log(_BasicTile.Color);
                 }
                 else
                 {
@@ -187,6 +188,14 @@ public class PuzzleGrid : MonoBehaviour
                 }
             }
         }
+
+        // DEBUG
+        //if (ClearedCoordinates.Count > 0)
+        //{
+        //    #if UNITY_EDITOR
+        //                UnityEditor.EditorApplication.isPaused = true;
+        //    #endif
+        //}
 
         // Temporary - Remove Cleared Coordinates
         foreach (Vector2Int _TileCoordinate in ClearedCoordinates)
@@ -271,6 +280,13 @@ public class PuzzleGrid : MonoBehaviour
         return GetTileByID(TileKey);
     }
 
+    private int CompareFreeTileHeightAscending(int TileAID, int TileBID)
+    {
+        float TileAY = GetTileByID(TileAID).GridPosition.y;
+        float TileBY = GetTileByID(TileBID).GridPosition.y;
+        return TileBY.CompareTo(TileAY);
+    }
+
     Griddable GetTileByID(int TileKey)
     {
         if (TileKey == 0) return null;
@@ -299,7 +315,7 @@ public class PuzzleGrid : MonoBehaviour
         {
             for (int j = 0; j < i*2 + 2; j++)
             {
-                TileGrid[i, j] = CreateNewBasicTile(GameAssets.GetRandomTileColor(), new Vector2(i,j), true);
+                AttachTileToGrid(GetTileByID(CreateNewBasicTile(GameAssets.GetRandomTileColor(), new Vector2(i,j), true)), new Vector2Int(i, j));
             }
         }
 
@@ -345,6 +361,7 @@ public class PuzzleGrid : MonoBehaviour
     {
 
         int TileID = TileGrid[_GridCoordinate.x, _GridCoordinate.y];
+        UpdateTileAtGridCoordinate(_GridCoordinate.x, _GridCoordinate.y);
 
         // Make sure the grid position is not empty (Value 0)
         if (TileID == 0) Debug.LogError("Attempted to unattach a non-existent Tile.");
@@ -484,7 +501,11 @@ public class PuzzleGrid : MonoBehaviour
             for (int i = 0; i < GridSize.x; i++)
             {
                 if (j > 0) TileGrid[i, j] = TileGrid[i, j - 1];
-                else TileGrid[i, j] = CreateNewBasicTile(GameAssets.GetRandomTileColor(), new Vector2(i, j), true);
+                else
+                {
+                    TileGrid[i, j] = 0;
+                    AttachTileToGrid(GetTileByID(CreateNewBasicTile(GameAssets.GetRandomTileColor(), new Vector2(i, j), true)), new Vector2Int(i, j));
+                }
             }
         }
 

@@ -311,6 +311,10 @@ PrefabInstance:
       value: PuzzleFrame
       objectReference: {fileID: 0}
     - target: {fileID: 3490323375794069530, guid: 7d28d3cc3566c144b81db25a2fa2b379, type: 3}
+      propertyPath: TIME
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3490323375794069530, guid: 7d28d3cc3566c144b81db25a2fa2b379, type: 3}
       propertyPath: Position.x
       value: 2
       objectReference: {fileID: 0}
