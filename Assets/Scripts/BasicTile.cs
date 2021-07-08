@@ -6,7 +6,7 @@ public class BasicTile : Griddable
 {
     public enum TileColor { Green, Blue, Indigo, Yellow, Red, Purple }
 
-    [SerializeField] TileColor Color;
+    public TileColor Color { get; protected set; }
     override public TileType Type { get; protected set; } = TileType.Basic;
     override public bool Swappable { get; protected set; } = true;
 
@@ -20,11 +20,6 @@ public class BasicTile : Griddable
     protected override void UpdateSprite()
     {
         SR.sprite = GameAssets.GetSpriteByTileColor(Color);
-    }
-
-    protected override void OnSwapComplete()
-    {
-
     }
 
 }

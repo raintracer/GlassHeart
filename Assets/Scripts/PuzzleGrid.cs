@@ -21,12 +21,14 @@ public class PuzzleGrid : MonoBehaviour
     private ControlMap Inputs;
     private Vector2Int CursorPosition = new Vector2Int(2, 4);
     private GameObject CursorObject;
+    private bool CusorSwitchFlag = false;
     private bool ScrollBoost = false;
 
     // Constants
     private const int CEILING_ROW = 13;
     private const int FLOOR_ROW = 2;
     private const float SCROLL_BOOST_FACTOR = 20f;
+    [SerializeField] public float TIME;
 
     // These properties affect the rendering of Griddables
     public Vector2 GridWorldPosition { get; private set; }
@@ -49,24 +51,40 @@ public class PuzzleGrid : MonoBehaviour
         Inputs = new ControlMap();
         Inputs.Enable();
         Inputs.Player.MoveCursor.performed += ctx => MoveCursor(ctx.ReadValue<Vector2>());
-        Inputs.Player.SwitchAtCursor.started += ctx => SwitchAtCursor();
+        Inputs.Player.SwitchAtCursor.started += ctx => CusorSwitchFlag = true;
         Inputs.Player.ScrollBoost.performed += ctx => ScrollBoost = true;
         Inputs.Player.ScrollBoost.canceled += ctx => ScrollBoost = false;
+    }
+
+    private void OnDrawGizmos()
+    {
+        // Draw Debug Grid
+        Gizmos.color = Color.red;
+        for (int i = 0; i < GridSize.x; i++)
+        {
+            for (int j = 0; j < GridSize.y; j++)
+            {
+                if (TileGrid[i,j] != 0)
+                {
+                    Gizmos.DrawWireCube((Vector3)GridWorldPosition + new Vector3(0, GridScrollOffset, 0) + new Vector3(i, j, 0) + Vector3.up / 2 + Vector3.right / 2, Vector3.one);
+                }
+            }
+        }
     }
 
     void FixedUpdate()
     {
 
-        // Check Update Requests
+        // Process Grid Requests
         for (int i = 0; i < GridRequests.Count; i++)
         {
             if (GridRequests[i].Type == GridRequestType.Destroy)
             {
                 Vector2Int TileCoordinate = GridRequests[i].Coordinate;
                 int TileID = TileGrid[TileCoordinate.x, TileCoordinate.y];
-                DeleteTileFromGrid(TileCoordinate);
+                UnattachTileFromGrid(TileCoordinate);
                 DestroyUnlockedTile(GetTileByID(TileID));
-                GridRequests.Add(new GridRequest { Type = GridRequestType.Update, Coordinate = TileCoordinate});
+                GridRequests.Add(new GridRequest { Type = GridRequestType.Update, Coordinate = TileCoordinate });
             }
             if (GridRequests[i].Type == GridRequestType.Update)
             {
@@ -77,12 +95,15 @@ public class PuzzleGrid : MonoBehaviour
                 {
                     if (CoordinateContainsLockedTile(TileCoordinate) && !CoordinateContainsLockedTile(TileCoordinate + Vector2Int.down))
                     {
-                        UnattachTileFromGrid(TileCoordinate);
-                        if (TileCoordinate.y < GridSize.y - 1) GridRequests.Add(new GridRequest { Type = GridRequestType.Update, Coordinate = TileCoordinate + Vector2Int.up } );
+                        if (GetTileByGridCoordinate(TileCoordinate).FallAllowed())
+                        {
+                            UnattachTileFromGrid(TileCoordinate);
+                            if (TileCoordinate.y < GridSize.y - 1) GridRequests.Add(new GridRequest { Type = GridRequestType.Update, Coordinate = TileCoordinate + Vector2Int.up });
+                        }
                     }
                 }
 
-                // Tell above tile to fall if there is no tile, and there is a tile above
+                // Tell above tile to update/fall if there is no tile, and there is a tile above
                 if (TileCoordinate.y < GridSize.y - 1)
                 {
                     // If the updated Tile is empty, check for an up-neighbor and unattach. Add that tile to the new requests hash
@@ -95,22 +116,87 @@ public class PuzzleGrid : MonoBehaviour
         }
         GridRequests.Clear();
 
+        if (CusorSwitchFlag)
+        {
+            CusorSwitchFlag = false;
+            SwitchAtCursor();
+        }
+
         // Run Free Tile Physics
-        if (UnlockedTiles.Count != 0) { 
-            for(int i = UnlockedTiles.Count - 1; i >= 0; i--)
+        if (UnlockedTiles.Count != 0)
+        {
+            for (int i = UnlockedTiles.Count - 1; i >= 0; i--)
             {
                 int TileKey = UnlockedTiles[i];
                 GetTileByID(TileKey).FreeFall();
-            } 
+            }
         }
 
         // Scroll Grid
-        float ScrollAmount = 0.001f;
+        float ScrollAmount = 0.001f * TIME;
         if (ScrollBoost) ScrollAmount *= SCROLL_BOOST_FACTOR;
         if (!RowContainsLockedTiles(CEILING_ROW)) Scroll(ScrollAmount);
 
+        // Check for match-clearing
+
+        // Create Nullable Color Map
+        BasicTile.TileColor?[,] ColorGrid = new BasicTile.TileColor?[GridSize.x, GridSize.y];
+        for (int j = CEILING_ROW; j >= FLOOR_ROW; j--)
+        {
+            for (int i = 0; i < GridSize.x; i++)
+            {
+                Griddable _Tile = GetTileByGridCoordinate(new Vector2Int(i, j));
+                if (_Tile != null && _Tile.Type == Griddable.TileType.Basic && _Tile.ClearAllowed())
+                {
+                    BasicTile _BasicTile = _Tile as BasicTile;
+                    ColorGrid[i, j] = _BasicTile.Color;
+                    Debug.Log(_BasicTile.Color);
+                }
+                else
+                {
+                    ColorGrid[i, j] = null;
+                }
+            }
+        }
+
+        // Iterate over color map for matches to add to HashSet
+        HashSet<Vector2Int> ClearedCoordinates = new HashSet<Vector2Int>();
+        for (int j = CEILING_ROW; j >= FLOOR_ROW; j--)
+        {
+            for (int i = 0; i < GridSize.x; i++)
+            {
+                BasicTile.TileColor? OriginColor = ColorGrid[i, j];
+                if (OriginColor == null) continue;
+                if (j >= FLOOR_ROW + 2)
+                {
+                    if (ColorGrid[i, j - 1] == OriginColor && ColorGrid[i, j - 2] == OriginColor)
+                    {
+                        ClearedCoordinates.Add(new Vector2Int(i, j - 0));
+                        ClearedCoordinates.Add(new Vector2Int(i, j - 1));
+                        ClearedCoordinates.Add(new Vector2Int(i, j - 2));
+                    }
+                }
+                if (i < GridSize.x - 2)
+                {
+                    if (ColorGrid[i + 1, j] == OriginColor && ColorGrid[i + 2, j] == OriginColor)
+                    {
+                        ClearedCoordinates.Add(new Vector2Int(i + 0, j));
+                        ClearedCoordinates.Add(new Vector2Int(i + 1, j));
+                        ClearedCoordinates.Add(new Vector2Int(i + 2, j));
+                    }
+                }
+            }
+        }
+
+        // Temporary - Remove Cleared Coordinates
+        foreach (Vector2Int _TileCoordinate in ClearedCoordinates)
+        {
+            GetTileByGridCoordinate(_TileCoordinate).Clear();
+        }
+        ClearedCoordinates.Clear();
+
     }
-    
+
     #endregion
 
     #region Cursor Methods
@@ -141,8 +227,8 @@ public class PuzzleGrid : MonoBehaviour
         if (CoordinateContainsFreeTile(CursorPosition) || CoordinateContainsFreeTile(CursorPosition + Vector2Int.right)) return;
 
         // CAPTURE TILES CORRESPONDING TO THE GRID-SPACES
-        Griddable TileA = GetTileByGridPosition(CursorPosition);
-        Griddable TileB = GetTileByGridPosition(CursorPosition + Vector2Int.right);
+        Griddable TileA = GetTileByGridCoordinate(CursorPosition);
+        Griddable TileB = GetTileByGridCoordinate(CursorPosition + Vector2Int.right);
 
         // CONFIRM BOTH GRIDDABLES ARE SWAPPABLE OR NULL, BUT BOTH ARE NOT NULL
         if (TileA != null && !TileA.SwappingAllowed()) return;
@@ -153,12 +239,12 @@ public class PuzzleGrid : MonoBehaviour
         if (TileA == null)
         {
             AttachTileToGrid(GetTileByID(CreateNewSwapTempTile(CursorPosition)), CursorPosition);
-            TileA = GetTileByGridPosition(CursorPosition);
+            TileA = GetTileByGridCoordinate(CursorPosition);
         }
         else if (TileB == null)
         {
             AttachTileToGrid(GetTileByID(CreateNewSwapTempTile(CursorPosition + Vector2Int.right)), CursorPosition + Vector2Int.right);
-            TileB = GetTileByGridPosition(CursorPosition + Vector2Int.right);
+            TileB = GetTileByGridCoordinate(CursorPosition + Vector2Int.right);
         }
 
         // SWAP VALUES
@@ -179,7 +265,7 @@ public class PuzzleGrid : MonoBehaviour
     #endregion
 
     #region Tile Methods
-    Griddable GetTileByGridPosition(Vector2Int GridPosition)
+    Griddable GetTileByGridCoordinate(Vector2Int GridPosition)
     {
         int TileKey = TileGrid[GridPosition.x, GridPosition.y];
         return GetTileByID(TileKey);
@@ -314,10 +400,16 @@ public class PuzzleGrid : MonoBehaviour
         return TileGrid[_GridCoordinate.x, _GridCoordinate.y];
     }
 
-    public void RequestAttachment(Griddable _Tile, Vector2Int _GridPosition)
+    public bool RequestAttachment(Griddable _Tile, Vector2Int _GridCoordinate)
     {
-        if (TileGrid[_GridPosition.x, _GridPosition.y] != 0) Debug.LogError("Tile requested attachment to an occupied grid-space.");
-        AttachTileToGrid(_Tile, _GridPosition);
+        if (TileGrid[_GridCoordinate.x, _GridCoordinate.y] != 0)
+        {
+            Debug.LogWarning("Tile requested attachment to an occupied grid-space.");
+            return false;
+        }
+
+        AttachTileToGrid(_Tile, _GridCoordinate);
+        return true;
     }
 
     private bool RowContainsLockedTiles(int RowIndex)
@@ -375,9 +467,9 @@ public class PuzzleGrid : MonoBehaviour
     public void DestroyUnlockedTile(Griddable _Tile)
     {
         int KeyID = _Tile.KeyID;
-        _Tile.Destroy();
         UnlockedTiles.Remove(KeyID);
         Tiles.Remove(KeyID);
+        _Tile.Destroy();
     }
 
     #endregion

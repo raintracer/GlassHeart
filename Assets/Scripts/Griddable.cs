@@ -16,7 +16,7 @@ public abstract class Griddable
     public Vector2 GridPosition { get; private set; }
     public Vector2Int GridCoordinate { get; private set; }
 
-    const float FALL_SPEED = 0.01F;
+    const float FALL_SPEED = 0.4F;
     public abstract bool Swappable { get; protected set; }
     readonly static int SWAP_FRAMES = 4;
     protected enum State { Free, Set, Swapping, Clearing, Dying, Special }
@@ -64,7 +64,16 @@ public abstract class Griddable
         return (Swappable && (state == State.Set));
     }
 
-    abstract protected void OnSwapComplete();
+    public bool FallAllowed()
+    {
+        return (state == State.Set);
+    }
+
+    virtual protected void OnSwapComplete()
+    {
+        state = State.Set;
+        ParentGrid.PingUpdate(this);
+    }
 
     public void Swap(bool SwapRight)
     {
@@ -98,12 +107,9 @@ public abstract class Griddable
         }
 
         SR.material.SetFloat("_Offset", 0f);
-        state = State.Set;
         SR.material = GameAssets.Material.Default;
 
-        ParentGrid.PingUpdate(this);
         OnSwapComplete();
-
     }
 
     public void Unattach()
@@ -125,20 +131,27 @@ public abstract class Griddable
     public void FreeFall()
     {
         // Determine predicted new position
-        Vector2 newGridPosition = GridPosition + new Vector2(0, -FALL_SPEED);
+        Vector2 newGridPosition = GridPosition + new Vector2(0, -FALL_SPEED * ParentGrid.TIME);
 
         // Determine if new GridPosition intersects a locked Tile
         Vector2Int GridCheck = new Vector2Int((int)(newGridPosition.x + 0.5f), (int)(newGridPosition.y));
+        Vector2Int AttachPoint = GridCheck;
 
         if (GridCheck.y < 0)
         {
             // Request Attachment
-            ParentGrid.RequestAttachment(this, GridCheck + Vector2Int.up);
+            do
+            {
+                AttachPoint = AttachPoint + Vector2Int.up;
+            } while (!ParentGrid.RequestAttachment(this, AttachPoint));
         }
         else if (ParentGrid.GetTileKeyAtGridCoordinate(GridCheck) != 0)
         {
             // Request Attachment
-            ParentGrid.RequestAttachment(this, GridCheck + Vector2Int.up);
+            do
+            {
+                AttachPoint = AttachPoint + Vector2Int.up;
+            } while (!ParentGrid.RequestAttachment(this, AttachPoint));
         }
         else
         {
@@ -149,13 +162,23 @@ public abstract class Griddable
 
     protected void RequestDestruction()
     {
-        state = State.Dying;
+        state = State.Clearing;
         ParentGrid.DestroyRequest(this);
     }
 
     public void Destroy()
     {
         GameObject.Destroy(GO);
+    }
+
+    public void Clear()
+    {
+        RequestDestruction();
+    }
+
+    public bool ClearAllowed()
+    {
+        return (state == State.Set);
     }
 
 }
