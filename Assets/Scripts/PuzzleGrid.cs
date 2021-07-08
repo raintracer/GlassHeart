@@ -189,14 +189,6 @@ public class PuzzleGrid : MonoBehaviour
             }
         }
 
-        // DEBUG
-        //if (ClearedCoordinates.Count > 0)
-        //{
-        //    #if UNITY_EDITOR
-        //                UnityEditor.EditorApplication.isPaused = true;
-        //    #endif
-        //}
-
         // Temporary - Remove Cleared Coordinates
         foreach (Vector2Int _TileCoordinate in ClearedCoordinates)
         {
