@@ -135,6 +135,7 @@ public abstract class Griddable
 
         // Bust
         SR.sprite = null;
+        GameAssets.Sound.DefaultBust.Play();
 
         // Wait for others in the clear set to all bust
         for (int i = 0; i < (ClearTotal - ClearOrder) * CLEAR_BUST_DELAY_FRAMES; i++)

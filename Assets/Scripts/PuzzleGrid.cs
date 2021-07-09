@@ -34,6 +34,9 @@ public class PuzzleGrid : MonoBehaviour
     public Vector2 GridWorldPosition { get; private set; }
     public float GridScrollOffset { get; private set; }
 
+    // Tile screen handlers
+    GameObject TileScreenObject;
+
     #region Unity Events
 
     void Awake()
@@ -54,6 +57,8 @@ public class PuzzleGrid : MonoBehaviour
         Inputs.Player.SwitchAtCursor.started += ctx => CusorSwitchFlag = true;
         Inputs.Player.ScrollBoost.performed += ctx => ScrollBoost = true;
         Inputs.Player.ScrollBoost.canceled += ctx => ScrollBoost = false;
+
+        TileScreenObject = Instantiate(Resources.Load<GameObject>("TileScreen"), transform);
     }
 
     private void OnDrawGizmos()
@@ -140,6 +145,10 @@ public class PuzzleGrid : MonoBehaviour
         if (!RowContainsLockedTiles(CEILING_ROW)) Scroll(ScrollAmount);
 
         ProcessClearing();
+
+        // Reposition Tile Screen
+        TileScreenObject.transform.position = GridWorldPosition + Vector2.up * (FLOOR_ROW + GridScrollOffset - 1);
+
     }
 
     private void ProcessClearing() // Check for matches and set tiles to clear

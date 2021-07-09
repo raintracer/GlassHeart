@@ -1,6 +1,6 @@
 Done:
+Added Bust Sound
 
 Todo:
-Add Animation and delay for clearing
 Add visual indication that generating tiles are not yet active
 

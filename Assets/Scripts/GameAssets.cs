@@ -94,6 +94,7 @@ static public class GameAssets
         Sounds = new Dictionary<string, Sound>
         {
             ["CursorClick"] = new Sound(GO.AddComponent<AudioSource>(), "CursorClick", 0.5f),
+            ["DefaultBust"] = new Sound(GO.AddComponent<AudioSource>(), "DefaultBust", 0.5f),
         };
     }
     public static Sound GetSound(string _SoundName)
@@ -107,7 +108,7 @@ static public class GameAssets
 
         // EXPOSE SOUNDS FOR STRONG TYPING
         public static Sound CursorClick { get => GetSound("CursorClick"); }
-
+        public static Sound DefaultBust { get => GetSound("DefaultBust"); }
 
         private AudioSource Source;
         public string ClipName { get; private set; }
