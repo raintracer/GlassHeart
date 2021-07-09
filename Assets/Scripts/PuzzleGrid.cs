@@ -139,7 +139,11 @@ public class PuzzleGrid : MonoBehaviour
         if (ScrollBoost) ScrollAmount *= SCROLL_BOOST_FACTOR;
         if (!RowContainsLockedTiles(CEILING_ROW)) Scroll(ScrollAmount);
 
-        // Check for match-clearing
+        ProcessClearing();
+    }
+
+    private void ProcessClearing() // Check for matches and set tiles to clear
+    {
 
         // Create Nullable Color Map
         BasicTile.TileColor?[,] ColorGrid = new BasicTile.TileColor?[GridSize.x, GridSize.y];
@@ -161,7 +165,7 @@ public class PuzzleGrid : MonoBehaviour
         }
 
         // Iterate over color map for matches to add to HashSet
-        HashSet<Vector2Int> ClearedCoordinates = new HashSet<Vector2Int>();
+        HashSet<Vector2Int> ClearedCoordinatesHash = new HashSet<Vector2Int>();
         for (int j = CEILING_ROW; j >= FLOOR_ROW; j--)
         {
             for (int i = 0; i < GridSize.x; i++)
@@ -172,30 +176,54 @@ public class PuzzleGrid : MonoBehaviour
                 {
                     if (ColorGrid[i, j - 1] == OriginColor && ColorGrid[i, j - 2] == OriginColor)
                     {
-                        ClearedCoordinates.Add(new Vector2Int(i, j - 0));
-                        ClearedCoordinates.Add(new Vector2Int(i, j - 1));
-                        ClearedCoordinates.Add(new Vector2Int(i, j - 2));
+                        ClearedCoordinatesHash.Add(new Vector2Int(i, j - 0));
+                        ClearedCoordinatesHash.Add(new Vector2Int(i, j - 1));
+                        ClearedCoordinatesHash.Add(new Vector2Int(i, j - 2));
                     }
                 }
                 if (i < GridSize.x - 2)
                 {
                     if (ColorGrid[i + 1, j] == OriginColor && ColorGrid[i + 2, j] == OriginColor)
                     {
-                        ClearedCoordinates.Add(new Vector2Int(i + 0, j));
-                        ClearedCoordinates.Add(new Vector2Int(i + 1, j));
-                        ClearedCoordinates.Add(new Vector2Int(i + 2, j));
+                        ClearedCoordinatesHash.Add(new Vector2Int(i + 0, j));
+                        ClearedCoordinatesHash.Add(new Vector2Int(i + 1, j));
+                        ClearedCoordinatesHash.Add(new Vector2Int(i + 2, j));
                     }
                 }
             }
         }
 
-        // Temporary - Remove Cleared Coordinates
-        foreach (Vector2Int _TileCoordinate in ClearedCoordinates)
-        {
-            GetTileByGridCoordinate(_TileCoordinate).Clear();
-        }
-        ClearedCoordinates.Clear();
 
+        if (ClearedCoordinatesHash.Count > 0)
+        {
+
+            // Order Cleared Tiles In a List
+            List<Vector2Int> ClearedCoordinatesList = new List<Vector2Int>(ClearedCoordinatesHash);
+            ClearedCoordinatesList.Sort(CompareCoordinatesByClearOrderAscending);
+
+            // Temporary - Remove Cleared Coordinates
+            int ListCount = ClearedCoordinatesList.Count;
+            for (int i = 0; i < ListCount; i++)
+            {
+                Vector2Int _TileCoordinate = ClearedCoordinatesList[i];
+                GetTileByGridCoordinate(_TileCoordinate).Clear(i, ListCount);
+            }
+            ClearedCoordinatesHash.Clear();
+
+        }
+    }
+
+    private int CompareCoordinatesByClearOrderAscending(Vector2Int CoordinateA, Vector2Int CoordinateB)
+    {
+        if (CoordinateA == CoordinateB) return 0;
+        if (CoordinateA.y == CoordinateB.y)
+        {
+            return CoordinateA.x.CompareTo(CoordinateB.x);
+        }
+        else
+        {
+            return CoordinateB.y.CompareTo(CoordinateA.y);
+        }
     }
 
     #endregion

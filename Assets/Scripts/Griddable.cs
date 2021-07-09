@@ -19,6 +19,9 @@ public abstract class Griddable
     const float FALL_SPEED = 0.4F;
     public abstract bool Swappable { get; protected set; }
     readonly static int SWAP_FRAMES = 4;
+    readonly static int CLEAR_FLASH_FRAMES = 40;
+    readonly static int CLEAR_BUST_DELAY_FRAMES = 10;
+
     protected enum State { Free, Set, Swapping, Clearing, Dying, Special }
     protected State state;
     public bool LockedToGrid { get; private set; }
@@ -112,6 +115,38 @@ public abstract class Griddable
         OnSwapComplete();
     }
 
+    private IEnumerator AnimateClear(int ClearOrder, int ClearTotal) // ClearOrder is the position of this tile in a clear set (zero-indexed), ClearTotal is the total number of tiles in the clear set
+    {
+
+        SR.material = GameAssets.Material.ClearingFlash;
+
+        // Flash for a set time
+        for (int i = 0; i < CLEAR_FLASH_FRAMES; i++)
+        {
+            yield return new WaitForFixedUpdate();
+        }
+
+        // Wait To Bust
+        SR.material = GameAssets.Material.WaitingToBust;
+        for (int i = 0; i < (ClearOrder + 1) * CLEAR_BUST_DELAY_FRAMES; i++)
+        {
+            yield return new WaitForFixedUpdate();
+        }
+
+        // Bust
+        SR.sprite = null;
+
+        // Wait for others in the clear set to all bust
+        for (int i = 0; i < (ClearTotal - ClearOrder) * CLEAR_BUST_DELAY_FRAMES; i++)
+        {
+            yield return new WaitForFixedUpdate();
+        }
+
+        // Request Destruction
+        RequestDestruction();
+
+    }
+
     public void Unattach()
     {
         state = State.Free;
@@ -171,9 +206,10 @@ public abstract class Griddable
         GameObject.Destroy(GO);
     }
 
-    public void Clear()
+    public void Clear(int ClearOrder, int ClearTotal)
     {
-        RequestDestruction();
+        state = State.Clearing;
+        _ = mono.StartCoroutine(AnimateClear(ClearOrder, ClearTotal));
     }
 
     public bool ClearAllowed()

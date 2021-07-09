@@ -30,7 +30,9 @@ static public class GameAssets
         {
             //["SpriteDefault"] = Resources.Load<UnityEngine.Material>("Arena Grid"),
             ["Default"] = Resources.Load<UnityEngine.Material>("Default"),
-            ["Swap"] = Resources.Load<UnityEngine.Material>("Swap")
+            ["Swap"] = Resources.Load<UnityEngine.Material>("Swap"),
+            ["ClearingFlash"] = Resources.Load<UnityEngine.Material>("ClearingFlash"),
+            ["WaitingToBust"] = Resources.Load<UnityEngine.Material>("WaitingToBust"),
         };
     }
 
@@ -45,6 +47,8 @@ static public class GameAssets
         // Example - public static UnityEngine.Material ArenaGrid { get => GetMaterial("Arena Grid"); }
         public static UnityEngine.Material Swap { get => GetMaterial("Swap"); }
         public static UnityEngine.Material Default { get => GetMaterial("Default"); }
+        public static UnityEngine.Material ClearingFlash { get => GetMaterial("ClearingFlash"); }
+        public static UnityEngine.Material WaitingToBust { get => GetMaterial("WaitingToBust"); }
     }
 
     #endregion
