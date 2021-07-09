@@ -157,6 +157,7 @@ public abstract class Griddable
     {
         state = State.Set;
         GridCoordinate = _TileCoordinate;
+        GameAssets.Sound.TileLand.Play();
     }
 
     public void ChangeAttachmentCoordinate(Vector2Int _TileCoordinate)

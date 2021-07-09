@@ -298,6 +298,9 @@ public class PuzzleGrid : MonoBehaviour
         TileA.Swap(true);
         TileB.Swap(false);
 
+        // Play Swap Sound
+        GameAssets.Sound.Swap.Play();
+
     }
 
     #endregion
