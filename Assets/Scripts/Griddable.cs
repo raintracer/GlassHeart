@@ -157,7 +157,6 @@ public abstract class Griddable
     {
         state = State.Set;
         GridCoordinate = _TileCoordinate;
-        GameAssets.Sound.TileLand.Play();
     }
 
     public void ChangeAttachmentCoordinate(Vector2Int _TileCoordinate)
@@ -181,6 +180,7 @@ public abstract class Griddable
             {
                 AttachPoint = AttachPoint + Vector2Int.up;
             } while (!ParentGrid.RequestAttachment(this, AttachPoint));
+            GameAssets.Sound.TileLand.Play();
         }
         else if (ParentGrid.GetTileKeyAtGridCoordinate(GridCheck) != 0)
         {
@@ -189,6 +189,7 @@ public abstract class Griddable
             {
                 AttachPoint = AttachPoint + Vector2Int.up;
             } while (!ParentGrid.RequestAttachment(this, AttachPoint));
+            GameAssets.Sound.TileLand.Play();
         }
         else
         {

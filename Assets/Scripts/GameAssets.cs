@@ -93,7 +93,7 @@ static public class GameAssets
     {
         Sounds = new Dictionary<string, Sound>
         {
-            ["CursorClick"] = new Sound(GO.AddComponent<AudioSource>(), "CursorClick", 0.5f),
+            ["CursorClick"] = new Sound(GO.AddComponent<AudioSource>(), "CursorClick", 0.05f),
             ["DefaultBust"] = new Sound(GO.AddComponent<AudioSource>(), "DefaultBust", 0.5f),
             ["Swap"] = new Sound(GO.AddComponent<AudioSource>(), "Swap", 0.5f),
             ["TileLand"] = new Sound(GO.AddComponent<AudioSource>(), "TileLand", 0.5f),
