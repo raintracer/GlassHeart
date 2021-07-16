@@ -59,6 +59,9 @@ public class PuzzleGrid : MonoBehaviour
         Inputs.Player.ScrollBoost.canceled += ctx => ScrollBoost = false;
 
         TileScreenObject = Instantiate(Resources.Load<GameObject>("TileScreen"), transform);
+
+        // Start Music
+        GameAssets.Sound.StoneRock.Play();
     }
 
     private void OnDrawGizmos()

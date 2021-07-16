@@ -95,8 +95,9 @@ static public class GameAssets
         {
             ["CursorClick"] = new Sound(GO.AddComponent<AudioSource>(), "CursorClick", 0.05f),
             ["DefaultBust"] = new Sound(GO.AddComponent<AudioSource>(), "DefaultBust", 0.5f),
-            ["Swap"] = new Sound(GO.AddComponent<AudioSource>(), "Swap", 0.5f),
+            ["Swap"] = new Sound(GO.AddComponent<AudioSource>(), "Swap", 0.3f),
             ["TileLand"] = new Sound(GO.AddComponent<AudioSource>(), "TileLand", 0.5f),
+            ["StoneRock"] = new Sound(GO.AddComponent<AudioSource>(), "StoneRock", 0.5f, true),
         };
     }
     public static Sound GetSound(string _SoundName)
@@ -113,6 +114,7 @@ static public class GameAssets
         public static Sound DefaultBust { get => GetSound("DefaultBust"); }
         public static Sound Swap { get => GetSound("Swap"); }
         public static Sound TileLand { get => GetSound("TileLand"); }
+        public static Sound StoneRock { get => GetSound("StoneRock"); }
 
         private AudioSource Source;
         public string ClipName { get; private set; }
