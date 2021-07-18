@@ -14,6 +14,10 @@ public class PuzzleGrid : MonoBehaviour
     private Vector2Int GridSize = new Vector2Int(6, 15);
     private List<int> UnlockedTiles;
 
+    // Clear set logic
+    private List<ClearSet> ClearSets = new List<ClearSet>();
+    private int ChainLevel = 0;
+
     // This collection holds asynchronous update requests to process
     private List<GridRequest> GridRequests;
 
@@ -87,74 +91,13 @@ public class PuzzleGrid : MonoBehaviour
     void FixedUpdate()
     {
 
-        // Handle Cursor Movement
-        if (Movement != Vector2.zero)
-        {
-
-            if (Movement != LastMovement)
-            {
-                FastScrollCounter = 0;
-            }
-            else
-            {
-                FastScrollCounter++;
-            }
-
-            if (FastScrollCounter == 0)
-            {
-                MoveCursor(Movement, false);
-            } else if (FastScrollCounter >= FAST_SCROLL_FRAMES)
-            {
-                MoveCursor(Movement, true);
-            }
-
-        } else
-        {
-            FastScrollCounter = 0;
-        }
-        LastMovement = Movement;
+        // Move Cursor
+        HandleCursorMovement();
 
         // Process Grid Requests
-        for (int i = 0; i < GridRequests.Count; i++)
-        {
-            if (GridRequests[i].Type == GridRequestType.Destroy)
-            {
-                Vector2Int TileCoordinate = GridRequests[i].Coordinate;
-                int TileID = TileGrid[TileCoordinate.x, TileCoordinate.y];
-                UnattachTileFromGrid(TileCoordinate);
-                DestroyUnlockedTile(GetTileByID(TileID));
-                GridRequests.Add(new GridRequest { Type = GridRequestType.Update, Coordinate = TileCoordinate });
-            }
-            if (GridRequests[i].Type == GridRequestType.Update)
-            {
+        ProcessGridRequests();
 
-                // Fall if there is a tile and no tile underneath 
-                Vector2Int TileCoordinate = GridRequests[i].Coordinate;
-                if (TileCoordinate.y > 0)
-                {
-                    if (CoordinateContainsLockedTile(TileCoordinate) && !CoordinateContainsLockedTile(TileCoordinate + Vector2Int.down))
-                    {
-                        if (GetTileByGridCoordinate(TileCoordinate).FallAllowed())
-                        {
-                            UnattachTileFromGrid(TileCoordinate);
-                            if (TileCoordinate.y < GridSize.y - 1) GridRequests.Add(new GridRequest { Type = GridRequestType.Update, Coordinate = TileCoordinate + Vector2Int.up });
-                        }
-                    }
-                }
-
-                // Tell above tile to update/fall if there is no tile, and there is a tile above
-                if (TileCoordinate.y < GridSize.y - 1)
-                {
-                    // If the updated Tile is empty, check for an up-neighbor and unattach. Add that tile to the new requests hash
-                    if (!CoordinateContainsLockedTile(TileCoordinate) && CoordinateContainsLockedTile(TileCoordinate + Vector2Int.up))
-                    {
-                        GridRequests.Add(new GridRequest { Type = GridRequestType.Update, Coordinate = TileCoordinate + Vector2Int.up });
-                    }
-                }
-            }
-        }
-        GridRequests.Clear();
-
+        // Swap at cursor
         if (CusorSwitchFlag)
         {
             CusorSwitchFlag = false;
@@ -178,10 +121,112 @@ public class PuzzleGrid : MonoBehaviour
         if (ScrollBoost) ScrollAmount *= SCROLL_BOOST_FACTOR;
         if (!RowContainsLockedTiles(CEILING_ROW)) Scroll(ScrollAmount);
 
+        // Check for tiles to clear
         ProcessClearing();
+
+        // Reset all locked tile's chain level if they are not clearing
+        for (int i = 0; i < GridSize.x; i++)
+        {
+            for (int j = 0; j < GridSize.y; j++)
+            {
+                if (TileGrid[i,j] != 0) // Ignore empty tiles
+                {
+                    Griddable _Tile = GetTileByGridCoordinate(new Vector2Int(i, j));
+                    if (!_Tile.IsClearing()) _Tile.ResetChainLevel();
+                }
+            }
+
+        }
 
         // Reposition Tile Screen
         TileScreenObject.transform.position = GridWorldPosition + Vector2.up * (FLOOR_ROW + GridScrollOffset - 1);
+
+    }
+
+    private void ProcessGridRequests()
+    {
+
+        for (int i = 0; i < GridRequests.Count; i++)
+        {
+
+            if (GridRequests[i].Type == GridRequestType.Destroy)
+            {
+
+                Vector2Int TileCoordinate = GridRequests[i].Coordinate;
+                int TileID = TileGrid[TileCoordinate.x, TileCoordinate.y];
+                GridRequests.Add(new GridRequest { Type = GridRequestType.Update, Coordinate = TileCoordinate, ChainLevel = GridRequests[i].ChainLevel });
+                UnattachTileFromGrid(TileCoordinate);
+                DestroyUnlockedTile(GetTileByID(TileID));
+                
+            }
+
+            if (GridRequests[i].Type == GridRequestType.Update)
+            {
+
+                // Fall if there is a tile and no tile underneath 
+                Vector2Int TileCoordinate = GridRequests[i].Coordinate;
+                if (TileCoordinate.y > 0)
+                {
+                    if (CoordinateContainsLockedTile(TileCoordinate) && !CoordinateContainsLockedTile(TileCoordinate + Vector2Int.down))
+                    {
+                        Griddable _Tile = GetTileByGridCoordinate(TileCoordinate);
+                        if (_Tile.FallAllowed())
+                        {
+                            _Tile.SetChain(GridRequests[i].ChainLevel);
+                            UnattachTileFromGrid(TileCoordinate);
+                            if (TileCoordinate.y < GridSize.y - 1) GridRequests.Add(new GridRequest { Type = GridRequestType.Update, Coordinate = TileCoordinate + Vector2Int.up, ChainLevel = GridRequests[i].ChainLevel });
+                        }
+                    }
+                }
+
+                // Tell above tile to update/fall if there is no tile, and there is a tile above
+                if (TileCoordinate.y < GridSize.y - 1)
+                {
+                    // If the updated Tile is empty, check for an up-neighbor and unattach. Add that tile to the new requests hash
+                    if (!CoordinateContainsLockedTile(TileCoordinate) && CoordinateContainsLockedTile(TileCoordinate + Vector2Int.up))
+                    {
+                        GridRequests.Add(new GridRequest { Type = GridRequestType.Update, Coordinate = TileCoordinate + Vector2Int.up, ChainLevel = GridRequests[i].ChainLevel });
+                    }
+                }
+            }
+        }
+
+        GridRequests.Clear();
+
+    }
+
+    private void HandleCursorMovement()
+    {
+
+        // Handle Cursor Movement
+        if (Movement != Vector2.zero)
+        {
+
+            if (Movement != LastMovement)
+            {
+                FastScrollCounter = 0;
+            }
+            else
+            {
+                FastScrollCounter++;
+            }
+
+            if (FastScrollCounter == 0)
+            {
+                MoveCursor(Movement, false);
+            }
+            else if (FastScrollCounter >= FAST_SCROLL_FRAMES)
+            {
+                MoveCursor(Movement, true);
+            }
+
+        }
+        else
+        {
+            FastScrollCounter = 0;
+        }
+
+        LastMovement = Movement;
 
     }
 
@@ -240,19 +285,32 @@ public class PuzzleGrid : MonoBehaviour
         if (ClearedCoordinatesHash.Count > 0)
         {
 
+            // Check for Combo
             if (ClearedCoordinatesHash.Count > 3) GameAssets.Sound.Combo1.Play();
 
             // Order Cleared Tiles In a List
             List<Vector2Int> ClearedCoordinatesList = new List<Vector2Int>(ClearedCoordinatesHash);
             ClearedCoordinatesList.Sort(CompareCoordinatesByClearOrderAscending);
 
-            // Temporary - Remove Cleared Coordinates
+            // Check for 
+
+            // Temporary - Remove Cleared Coordinates and check for chain
             int ListCount = ClearedCoordinatesList.Count;
+            bool Chain = false;
             for (int i = 0; i < ListCount; i++)
             {
                 Vector2Int _TileCoordinate = ClearedCoordinatesList[i];
-                GetTileByGridCoordinate(_TileCoordinate).Clear(i, ListCount);
+                Griddable _Tile = GetTileByGridCoordinate(_TileCoordinate);
+                if (_Tile.ChainLevel > 0) Chain = true;
+                _Tile.Clear(i, ListCount);
             }
+
+            // Check for chain
+            if (Chain) GameAssets.Sound.Combo1.Play();
+
+            // Create Clear Set (Is this necessary?)
+            // ClearSets.Add(new ClearSet(ClearedCoordinatesList));
+
             ClearedCoordinatesHash.Clear();
 
         }
@@ -541,12 +599,13 @@ public class PuzzleGrid : MonoBehaviour
         GridRequests.Add(new GridRequest { Type = GridRequestType.Update, Coordinate = _TileCoordinate });
     }
 
-    public void DestroyRequest(Griddable _Tile) {
+    public void DestroyRequest(Griddable _Tile, bool _Chain) {
         // If Tile is unlocked, destroy immediately, otherwise add destroy request to GridRequests
         if (!_Tile.LockedToGrid) DestroyUnlockedTile(_Tile);
         else
         {
-            GridRequests.Add(new GridRequest { Type = GridRequestType.Destroy, Coordinate = _Tile.GridCoordinate });
+            if (_Chain) GridRequests.Add(new GridRequest { Type = GridRequestType.Destroy, Coordinate = _Tile.GridCoordinate, ChainLevel = _Tile.ChainLevel + 1 });
+            else GridRequests.Add(new GridRequest { Type = GridRequestType.Destroy, Coordinate = _Tile.GridCoordinate, ChainLevel = 0 });
         }
     }
 

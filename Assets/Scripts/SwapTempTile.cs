@@ -20,7 +20,7 @@ public class SwapTempTile : Griddable
 
     protected override void OnSwapComplete()
     {
-        RequestDestruction();
+        RequestDestruction(false);
     }
 
 }

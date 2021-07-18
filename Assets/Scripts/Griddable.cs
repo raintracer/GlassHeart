@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+using TMPro;
 public abstract class Griddable
 {
 
@@ -22,6 +22,8 @@ public abstract class Griddable
     readonly static int CLEAR_FLASH_FRAMES = 40;
     readonly static int CLEAR_BUST_DELAY_FRAMES = 10;
 
+    public int ChainLevel { get; set; } = 0;
+
     protected enum State { Free, Set, Swapping, Clearing, Dying, Special }
     protected State state;
     public bool LockedToGrid { get; private set; }
@@ -41,6 +43,17 @@ public abstract class Griddable
         
         state = LockedToGrid ? State.Set : State.Free;
 
+    }
+
+    public void SetChain(int _ChainLevel)
+    {
+        // GameObject.Find("ChainText").GetComponent<TextMeshPro>().text = _ChainLevel.ToString();
+        ChainLevel = _ChainLevel;
+    }
+
+    public bool IsClearing()
+    {
+        return (state == State.Clearing);
     }
 
     protected virtual void UpdateSprite() { }
@@ -70,6 +83,11 @@ public abstract class Griddable
     public bool FallAllowed()
     {
         return (state == State.Set);
+    }
+
+    public void ResetChainLevel()
+    {
+        SetChain(0);
     }
 
     virtual protected void OnSwapComplete()
@@ -147,7 +165,7 @@ public abstract class Griddable
         }
 
         // Request Destruction
-        RequestDestruction();
+        RequestDestruction(true);
 
     }
 
@@ -201,10 +219,10 @@ public abstract class Griddable
 
     }
 
-    protected void RequestDestruction()
+    protected void RequestDestruction(bool _Chain)
     {
-        state = State.Clearing;
-        ParentGrid.DestroyRequest(this);
+        state = State.Dying;
+        ParentGrid.DestroyRequest(this, _Chain);
     }
 
     public void Destroy()
