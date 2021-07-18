@@ -98,6 +98,7 @@ static public class GameAssets
             ["Swap"] = new Sound(GO.AddComponent<AudioSource>(), "Swap", 0.3f),
             ["TileLand"] = new Sound(GO.AddComponent<AudioSource>(), "TileLand", 0.5f),
             ["StoneRock"] = new Sound(GO.AddComponent<AudioSource>(), "StoneRock", 0.5f, true),
+            ["Combo1"] = new Sound(GO.AddComponent<AudioSource>(), "Combo1", 0.5f),
         };
     }
     public static Sound GetSound(string _SoundName)
@@ -115,6 +116,7 @@ static public class GameAssets
         public static Sound Swap { get => GetSound("Swap"); }
         public static Sound TileLand { get => GetSound("TileLand"); }
         public static Sound StoneRock { get => GetSound("StoneRock"); }
+        public static Sound Combo1 { get => GetSound("Combo1"); }
 
         private AudioSource Source;
         public string ClipName { get; private set; }

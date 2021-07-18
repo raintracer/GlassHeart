@@ -23,11 +23,15 @@ public class PuzzleGrid : MonoBehaviour
     private GameObject CursorObject;
     private bool CusorSwitchFlag = false;
     private bool ScrollBoost = false;
+    private int FastScrollCounter = 0;
+    private Vector2 Movement = Vector2.zero;
+    private Vector2 LastMovement = Vector2.zero;
 
     // Constants
     private const int CEILING_ROW = 13;
     private const int FLOOR_ROW = 2;
-    private const float SCROLL_BOOST_FACTOR = 20f;
+    private const float SCROLL_BOOST_FACTOR = 40f;
+    private const int FAST_SCROLL_FRAMES = 10;
     [SerializeField] public float TIME;
 
     // These properties affect the rendering of Griddables
@@ -53,7 +57,7 @@ public class PuzzleGrid : MonoBehaviour
         // INITIALIZE CONTROLS
         Inputs = new ControlMap();
         Inputs.Enable();
-        Inputs.Player.MoveCursor.performed += ctx => MoveCursor(ctx.ReadValue<Vector2>());
+        Inputs.Player.MoveCursor.performed += ctx => Movement = ctx.ReadValue<Vector2>();
         Inputs.Player.SwitchAtCursor.started += ctx => CusorSwitchFlag = true;
         Inputs.Player.ScrollBoost.performed += ctx => ScrollBoost = true;
         Inputs.Player.ScrollBoost.canceled += ctx => ScrollBoost = false;
@@ -64,24 +68,51 @@ public class PuzzleGrid : MonoBehaviour
         GameAssets.Sound.StoneRock.Play();
     }
 
-    private void OnDrawGizmos()
-    {
-        // Draw Debug Grid
-        Gizmos.color = Color.red;
-        for (int i = 0; i < GridSize.x; i++)
-        {
-            for (int j = 0; j < GridSize.y; j++)
-            {
-                if (TileGrid[i,j] != 0)
-                {
-                    Gizmos.DrawWireCube((Vector3)GridWorldPosition + new Vector3(0, GridScrollOffset, 0) + new Vector3(i, j, 0) + Vector3.up / 2 + Vector3.right / 2, Vector3.one);
-                }
-            }
-        }
-    }
+    //private void OnDraw()
+    //{
+    //    // Draw Debug Grid
+    //    Gizmos.color = Color.red;
+    //    for (int i = 0; i < GridSize.x; i++)
+    //    {
+    //        for (int j = 0; j < GridSize.y; j++)
+    //        {
+    //            if (TileGrid[i,j] != 0)
+    //            {
+    //                Gizmos.DrawWireCube((Vector3)GridWorldPosition + new Vector3(0, GridScrollOffset, 0) + new Vector3(i, j, 0) + Vector3.up / 2 + Vector3.right / 2, Vector3.one);
+    //            }
+    //        }
+    //    }
+    //}
 
     void FixedUpdate()
     {
+
+        // Handle Cursor Movement
+        if (Movement != Vector2.zero)
+        {
+
+            if (Movement != LastMovement)
+            {
+                FastScrollCounter = 0;
+            }
+            else
+            {
+                FastScrollCounter++;
+            }
+
+            if (FastScrollCounter == 0)
+            {
+                MoveCursor(Movement, false);
+            } else if (FastScrollCounter >= FAST_SCROLL_FRAMES)
+            {
+                MoveCursor(Movement, true);
+            }
+
+        } else
+        {
+            FastScrollCounter = 0;
+        }
+        LastMovement = Movement;
 
         // Process Grid Requests
         for (int i = 0; i < GridRequests.Count; i++)
@@ -209,6 +240,8 @@ public class PuzzleGrid : MonoBehaviour
         if (ClearedCoordinatesHash.Count > 0)
         {
 
+            if (ClearedCoordinatesHash.Count > 3) GameAssets.Sound.Combo1.Play();
+
             // Order Cleared Tiles In a List
             List<Vector2Int> ClearedCoordinatesList = new List<Vector2Int>(ClearedCoordinatesHash);
             ClearedCoordinatesList.Sort(CompareCoordinatesByClearOrderAscending);
@@ -241,15 +274,16 @@ public class PuzzleGrid : MonoBehaviour
     #endregion
 
     #region Cursor Methods
-    void MoveCursor(Vector2 _Movement)
+    void MoveCursor(Vector2 _Movement, bool FastScroll = false)
     {
         if (_Movement.SqrMagnitude() > 0) {
             Vector2Int OldCursorPosition = CursorPosition;
             CursorPosition += new Vector2Int((int)_Movement.x, (int)_Movement.y);
             CursorPosition.Clamp(new Vector2Int(0, FLOOR_ROW), new Vector2Int(GridSize.x - 2, CEILING_ROW));
             UpdateCursorPosition();
-             if (CursorPosition != OldCursorPosition) GameAssets.Sound.CursorClick.Play();
+            if (!FastScroll && CursorPosition != OldCursorPosition) GameAssets.Sound.CursorClick.Play(); 
         }
+        LastMovement = _Movement;
     }
 
     void UpdateCursorPosition()
