@@ -59,12 +59,19 @@ static public class GameAssets
     {
         Sprites = new Dictionary<string, UnityEngine.Sprite>
         {
-            ["TileBlue"] = Resources.Load<UnityEngine.Sprite>("Tile-Blue"),
-            ["TileIndigo"] = Resources.Load<UnityEngine.Sprite>("Tile-Indigo"),
-            ["TileRed"] = Resources.Load<UnityEngine.Sprite>("Tile-Red"),
-            ["TileYellow"] = Resources.Load<UnityEngine.Sprite>("Tile-Yellow"),
-            ["TilePurple"] = Resources.Load<UnityEngine.Sprite>("Tile-Purple"),
-            ["TileGreen"] = Resources.Load<UnityEngine.Sprite>("Tile-Green"),
+            ["TileBlueBackground"] = Resources.Load<UnityEngine.Sprite>("Tile-Blue-Background"),
+            ["TileIndigoBackground"] = Resources.Load<UnityEngine.Sprite>("Tile-Indigo-Background"),
+            ["TileRedBackground"] = Resources.Load<UnityEngine.Sprite>("Tile-Red-Background"),
+            ["TileYellowBackground"] = Resources.Load<UnityEngine.Sprite>("Tile-Yellow-Background"),
+            ["TilePurpleBackground"] = Resources.Load<UnityEngine.Sprite>("Tile-Purple-Background"),
+            ["TileGreenBackground"] = Resources.Load<UnityEngine.Sprite>("Tile-Green-Background"),
+            ["TileBlueBackground"] = Resources.Load<UnityEngine.Sprite>("Tile-Blue-Background"),
+            ["TileBlueIcon"] = Resources.Load<UnityEngine.Sprite>("Tile-Blue-Icon"),
+            ["TileIndigoIcon"] = Resources.Load<UnityEngine.Sprite>("Tile-Indigo-Icon"),
+            ["TileRedIcon"] = Resources.Load<UnityEngine.Sprite>("Tile-Red-Icon"),
+            ["TileYellowIcon"] = Resources.Load<UnityEngine.Sprite>("Tile-Yellow-Icon"),
+            ["TilePurpleIcon"] = Resources.Load<UnityEngine.Sprite>("Tile-Purple-Icon"),
+            ["TileGreenIcon"] = Resources.Load<UnityEngine.Sprite>("Tile-Green-Icon"),
         };
     }
 
@@ -77,12 +84,18 @@ static public class GameAssets
     public static class Sprite
     {
         // Example - public static UnityEngine.Material ArenaGrid { get => GetMaterial("Arena Grid"); }
-        public static UnityEngine.Sprite TileBlue { get => GetSprite("TileBlue"); }
-        public static UnityEngine.Sprite TileRed { get => GetSprite("TileRed"); }
-        public static UnityEngine.Sprite TileGreen { get => GetSprite("TileGreen"); }
-        public static UnityEngine.Sprite TileYellow { get => GetSprite("TileYellow"); }
-        public static UnityEngine.Sprite TileIndigo { get => GetSprite("TileIndigo"); }
-        public static UnityEngine.Sprite TilePurple { get => GetSprite("TilePurple"); }
+        public static UnityEngine.Sprite TileBlueBackground { get => GetSprite("TileBlueBackground"); }
+        public static UnityEngine.Sprite TileRedBackground { get => GetSprite("TileRedBackground"); }
+        public static UnityEngine.Sprite TileGreenBackground { get => GetSprite("TileGreenBackground"); }
+        public static UnityEngine.Sprite TileYellowBackground { get => GetSprite("TileYellowBackground"); }
+        public static UnityEngine.Sprite TileIndigoBackground { get => GetSprite("TileIndigoBackground"); }
+        public static UnityEngine.Sprite TilePurpleBackground { get => GetSprite("TilePurpleBackground"); }
+        public static UnityEngine.Sprite TileBlueIcon { get => GetSprite("TileBlueIcon"); }
+        public static UnityEngine.Sprite TileRedIcon { get => GetSprite("TileRedIcon"); }
+        public static UnityEngine.Sprite TileGreenIcon { get => GetSprite("TileGreenIcon"); }
+        public static UnityEngine.Sprite TileYellowIcon { get => GetSprite("TileYellowIcon"); }
+        public static UnityEngine.Sprite TileIndigoIcon { get => GetSprite("TileIndigoIcon"); }
+        public static UnityEngine.Sprite TilePurpleIcon { get => GetSprite("TilePurpleIcon"); }
     }
 
     #endregion
@@ -163,17 +176,31 @@ static public class GameAssets
 
     #region Glassheart Methods
 
-    public static UnityEngine.Sprite GetSpriteByTileColor(BasicTile.TileColor _Color)
+    public static UnityEngine.Sprite GetBackgroundSpriteByTileColor(BasicTile.TileColor _Color)
     {
         return _Color switch
         {
-            BasicTile.TileColor.Red    => Sprite.TileRed,
-            BasicTile.TileColor.Yellow => Sprite.TileYellow,
-            BasicTile.TileColor.Green  => Sprite.TileGreen,
-            BasicTile.TileColor.Blue   => Sprite.TileBlue,
-            BasicTile.TileColor.Indigo => Sprite.TileIndigo,
-            BasicTile.TileColor.Purple => Sprite.TilePurple,
-            _ => Sprite.TileRed,
+            BasicTile.TileColor.Red    => Sprite.TileRedBackground,
+            BasicTile.TileColor.Yellow => Sprite.TileYellowBackground,
+            BasicTile.TileColor.Green  => Sprite.TileGreenBackground,
+            BasicTile.TileColor.Blue   => Sprite.TileBlueBackground,
+            BasicTile.TileColor.Indigo => Sprite.TileIndigoBackground,
+            BasicTile.TileColor.Purple => Sprite.TilePurpleBackground,
+            _ => Sprite.TileRedBackground,
+        };
+    }
+
+    public static UnityEngine.Sprite GetIconSpriteByTileColor(BasicTile.TileColor _Color)
+    {
+        return _Color switch
+        {
+            BasicTile.TileColor.Red => Sprite.TileRedIcon,
+            BasicTile.TileColor.Yellow => Sprite.TileYellowIcon,
+            BasicTile.TileColor.Green => Sprite.TileGreenIcon,
+            BasicTile.TileColor.Blue => Sprite.TileBlueIcon,
+            BasicTile.TileColor.Indigo => Sprite.TileIndigoIcon,
+            BasicTile.TileColor.Purple => Sprite.TilePurpleIcon,
+            _ => Sprite.TileRedIcon,
         };
     }
 

@@ -38,6 +38,6 @@ Material:
     m_Floats:
     - _ClearTime: 1
     - _Frequency: 60
-    - _Intensity: 1.5
+    - _Intensity: 0.75
     m_Colors: []
   m_BuildTextureStacks: []

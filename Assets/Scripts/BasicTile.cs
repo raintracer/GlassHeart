@@ -19,7 +19,8 @@ public class BasicTile : Griddable
 
     protected override void UpdateSprite()
     {
-        SR.sprite = GameAssets.GetSpriteByTileColor(Color);
+        SR_Background.sprite = GameAssets.GetBackgroundSpriteByTileColor(Color);
+        SR_Icon.sprite = GameAssets.GetIconSpriteByTileColor(Color);
     }
 
 }

@@ -15,7 +15,8 @@ public class SwapTempTile : Griddable
 
     protected override void UpdateSprite()
     {
-        SR.sprite = null;
+        SR_Background.sprite = null;
+        SR_Icon.sprite = null;
     }
 
     protected override void OnSwapComplete()

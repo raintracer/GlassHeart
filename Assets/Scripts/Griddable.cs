@@ -7,7 +7,8 @@ public abstract class Griddable
 
     public int KeyID { get; private set; }
     readonly protected GameObject GO;
-    readonly protected SpriteRenderer SR;
+    protected SpriteRenderer SR_Background;
+    protected SpriteRenderer SR_Icon;
     readonly protected Mono mono;
     readonly protected PuzzleGrid ParentGrid;
     public enum TileType { Basic, SwapTemp }
@@ -37,10 +38,12 @@ public abstract class Griddable
         KeyID = newKeyID;
 
         GO = Object.Instantiate<GameObject>(Resources.Load<GameObject>("BasicTile"), ParentGrid.transform);
-        SR = GO.GetComponent<SpriteRenderer>();
         mono = GO.AddComponent<Mono>(); 
         GO.transform.position = ParentGrid.GridWorldPosition + GridPosition;
-        
+
+        SR_Background = GO.transform.Find("TileBackground").GetComponent<SpriteRenderer>();
+        SR_Icon = GO.transform.Find("TileIcon").GetComponent<SpriteRenderer>();
+
         state = LockedToGrid ? State.Set : State.Free;
 
     }
@@ -107,7 +110,8 @@ public abstract class Griddable
     private IEnumerator AnimateSwap(bool SwapRight)
     {
 
-        SR.material = GameAssets.Material.Swap;
+        SR_Background.material = GameAssets.Material.Swap;
+        SR_Icon.material = GameAssets.Material.Swap;
         float SwapOffset, OffsetChange;
         if (SwapRight)
         {
@@ -122,13 +126,17 @@ public abstract class Griddable
 
         for (int i = 0; i < SWAP_FRAMES; i++)
         {
-            SR.material.SetFloat("_Offset", SwapOffset);
+            SR_Background.material.SetFloat("_Offset", SwapOffset);
+            SR_Icon.material.SetFloat("_Offset", SwapOffset);
             yield return new WaitForFixedUpdate();
             SwapOffset += OffsetChange;
         }
 
-        SR.material.SetFloat("_Offset", 0f);
-        SR.material = GameAssets.Material.Default;
+        SR_Background.material.SetFloat("_Offset", 0f);
+        SR_Background.material = GameAssets.Material.Default;
+
+        SR_Icon.material.SetFloat("_Offset", 0f);
+        SR_Icon.material = GameAssets.Material.Default;
 
         OnSwapComplete();
     }
@@ -136,7 +144,7 @@ public abstract class Griddable
     private IEnumerator AnimateClear(int ClearOrder, int ClearTotal) // ClearOrder is the position of this tile in a clear set (zero-indexed), ClearTotal is the total number of tiles in the clear set
     {
 
-        SR.material = GameAssets.Material.ClearingFlash;
+        SR_Background.material = GameAssets.Material.ClearingFlash;
 
         // Flash for a set time
         for (int i = 0; i < CLEAR_FLASH_FRAMES; i++)
@@ -145,14 +153,15 @@ public abstract class Griddable
         }
 
         // Wait To Bust
-        SR.material = GameAssets.Material.WaitingToBust;
+        SR_Background.material = GameAssets.Material.WaitingToBust;
         for (int i = 0; i < (ClearOrder + 1) * CLEAR_BUST_DELAY_FRAMES; i++)
         {
             yield return new WaitForFixedUpdate();
         }
 
         // Bust
-        SR.sprite = null;
+        SR_Background.sprite = null;
+        SR_Icon.sprite = null;
         GameAssets.Sound.DefaultBust.Play();
 
         ParticleController Particles = GameObject.Instantiate(Resources.Load<GameObject>("ParticleController")).GetComponent<ParticleController>();

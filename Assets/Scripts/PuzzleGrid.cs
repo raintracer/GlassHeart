@@ -286,32 +286,43 @@ public class PuzzleGrid : MonoBehaviour
         {
 
             // Check for Combo
-            if (ClearedCoordinatesHash.Count > 3) GameAssets.Sound.Combo1.Play();
+            if (ClearedCoordinatesHash.Count > 3)
+            {
+                GameAssets.Sound.Combo1.Play();
+                GameObject CounterObject = Instantiate(Resources.Load<GameObject>("TechCounterObject"));
+                TechCounter Counter = CounterObject.GetComponent<TechCounter>();
+                Counter.StartEffect(TechCounter.TechType.Combo, ClearedCoordinatesHash.Count, new Vector2(1f, 1f));
+            }
 
             // Order Cleared Tiles In a List
             List<Vector2Int> ClearedCoordinatesList = new List<Vector2Int>(ClearedCoordinatesHash);
             ClearedCoordinatesList.Sort(CompareCoordinatesByClearOrderAscending);
 
-            // Check for 
-
             // Temporary - Remove Cleared Coordinates and check for chain
             int ListCount = ClearedCoordinatesList.Count;
-            bool Chain = false;
+            int HighestChain = 0;
             for (int i = 0; i < ListCount; i++)
             {
                 Vector2Int _TileCoordinate = ClearedCoordinatesList[i];
                 Griddable _Tile = GetTileByGridCoordinate(_TileCoordinate);
-                if (_Tile.ChainLevel > 0) Chain = true;
+                if (_Tile.ChainLevel > HighestChain) HighestChain = _Tile.ChainLevel;
                 _Tile.Clear(i, ListCount);
             }
 
             // Check for chain
-            if (Chain) GameAssets.Sound.Combo1.Play();
+            if (HighestChain > 0)
+            {
+                GameAssets.Sound.Combo1.Play();
+                ChainLevel = HighestChain;
+                GameObject CounterObject = Instantiate(Resources.Load<GameObject>("TechCounterObject"));
+                TechCounter Counter = CounterObject.GetComponent<TechCounter>();
+                Counter.StartEffect(TechCounter.TechType.Chain, ChainLevel + 1, new Vector2(1f, 2f));
+            }
 
-            // Create Clear Set (Is this necessary?)
-            // ClearSets.Add(new ClearSet(ClearedCoordinatesList));
+                // Create Clear Set (Is this necessary?)
+                // ClearSets.Add(new ClearSet(ClearedCoordinatesList));
 
-            ClearedCoordinatesHash.Clear();
+                ClearedCoordinatesHash.Clear();
 
         }
     }
