@@ -56,3 +56,6 @@ TagManager:
   - name: Cursor
     uniqueID: 1875770187
     locked: 0
+  - name: TechCounter
+    uniqueID: 3400574585
+    locked: 0

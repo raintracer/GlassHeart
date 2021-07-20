@@ -37,6 +37,7 @@ public class PuzzleGrid : MonoBehaviour
     private const float SCROLL_BOOST_FACTOR = 40f;
     private const int FAST_SCROLL_FRAMES = 10;
     [SerializeField] public float TIME;
+    private const int DANGER_ROW = 11;
 
     // These properties affect the rendering of Griddables
     public Vector2 GridWorldPosition { get; private set; }
@@ -124,15 +125,21 @@ public class PuzzleGrid : MonoBehaviour
         // Check for tiles to clear
         ProcessClearing();
 
-        // Reset all locked tile's chain level if they are not clearing
+        // Reset all locked tile's chain level if they are not clearing and are not over a swapping tile
         for (int i = 0; i < GridSize.x; i++)
         {
-            for (int j = 0; j < GridSize.y; j++)
+            for (int j = 1; j < GridSize.y; j++)
             {
                 if (TileGrid[i,j] != 0) // Ignore empty tiles
                 {
                     Griddable _Tile = GetTileByGridCoordinate(new Vector2Int(i, j));
-                    if (!_Tile.IsClearing()) _Tile.ResetChainLevel();
+                    if (!_Tile.IsClearing())
+                    {
+                        if (TileGrid[i, j-1] == 0 || !GetTileByGridCoordinate(new Vector2Int(i, j-1)).IsSwapping())
+                        {
+                            _Tile.ResetChainLevel();
+                        }
+                    }
                 }
             }
 
@@ -144,6 +151,32 @@ public class PuzzleGrid : MonoBehaviour
         // Reposition Tile Screen
         TileScreenObject.transform.position = GridWorldPosition + Vector2.up * (FLOOR_ROW + GridScrollOffset - 1);
 
+        // Determine Columns that should bounce
+        for(int i = 0; i < GridSize.x; i++)
+        {
+            for (int j = 0; j < GridSize.y; j++)
+            {
+                Griddable _Tile = GetTileByGridCoordinate(new Vector2Int(i, j));
+                if (_Tile != null)
+                {
+                    if (ColumnInDanger(i))
+                    {
+
+                        _Tile.RequestBounceStart();
+                    }
+                    else
+                    {
+                        _Tile.RequestBounceStop();
+                    }
+                }
+            }
+        }
+
+    }
+
+    private bool ColumnInDanger(int _Column)
+    {
+        return (TileGrid[_Column, DANGER_ROW] != 0);
     }
 
     private void ProcessGridRequests()
@@ -288,15 +321,6 @@ public class PuzzleGrid : MonoBehaviour
         if (ClearedCoordinatesHash.Count > 0)
         {
 
-            // Check for Combo
-            if (ClearedCoordinatesHash.Count > 3)
-            {
-                GameAssets.Sound.Combo1.Play();
-                GameObject CounterObject = Instantiate(Resources.Load<GameObject>("TechCounterObject"));
-                TechCounter Counter = CounterObject.GetComponent<TechCounter>();
-                Counter.StartEffect(TechCounter.TechType.Combo, ClearedCoordinatesHash.Count, new Vector2(1f, 1f));
-            }
-
             // Order Cleared Tiles In a List
             List<Vector2Int> ClearedCoordinatesList = new List<Vector2Int>(ClearedCoordinatesHash);
             ClearedCoordinatesList.Sort(CompareCoordinatesByClearOrderAscending);
@@ -312,6 +336,16 @@ public class PuzzleGrid : MonoBehaviour
                 _Tile.Clear(i, ListCount);
             }
 
+            // Check for Combo
+            if (ClearedCoordinatesList.Count > 3)
+            {
+                GameAssets.Sound.Combo1.Play();
+                GameObject CounterObject = Instantiate(Resources.Load<GameObject>("TechCounterObject"));
+                TechCounter Counter = CounterObject.GetComponent<TechCounter>();
+                Griddable FirstTile = GetTileByGridCoordinate(ClearedCoordinatesList[0]);
+                Counter.StartEffect(TechCounter.TechType.Combo, ClearedCoordinatesHash.Count, (Vector2)FirstTile.GetWorldPosition() + new Vector2(0.5f, 1.75f));
+            }
+
             // Check for chain
             if (HighestChain > 0)
             {
@@ -319,7 +353,13 @@ public class PuzzleGrid : MonoBehaviour
                 ChainLevel++;
                 GameObject CounterObject = Instantiate(Resources.Load<GameObject>("TechCounterObject"));
                 TechCounter Counter = CounterObject.GetComponent<TechCounter>();
-                Counter.StartEffect(TechCounter.TechType.Chain, ChainLevel + 1, new Vector2(1f, 2f));
+                Griddable FirstTile = GetTileByGridCoordinate(ClearedCoordinatesList[0]);
+
+                // Offset the chain tech counter if there was also a combo
+                Vector2 ComboOffset = Vector2.zero;
+                if (ClearedCoordinatesList.Count > 3) ComboOffset = new Vector2(0f, 1f);
+
+                Counter.StartEffect(TechCounter.TechType.Chain, ChainLevel + 1, (Vector2)FirstTile.GetWorldPosition() + ComboOffset + new Vector2(0.5f, 1.75f));
             }
 
                 // Create Clear Set (Is this necessary?)

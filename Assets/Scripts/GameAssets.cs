@@ -33,6 +33,8 @@ static public class GameAssets
             ["Swap"] = Resources.Load<UnityEngine.Material>("Swap"),
             ["ClearingFlash"] = Resources.Load<UnityEngine.Material>("ClearingFlash"),
             ["WaitingToBust"] = Resources.Load<UnityEngine.Material>("WaitingToBust"),
+            ["TileLand"] = Resources.Load<UnityEngine.Material>("TileLand"),
+            ["TileBounce"] = Resources.Load<UnityEngine.Material>("TileBounce")
         };
     }
 
@@ -49,6 +51,8 @@ static public class GameAssets
         public static UnityEngine.Material Default { get => GetMaterial("Default"); }
         public static UnityEngine.Material ClearingFlash { get => GetMaterial("ClearingFlash"); }
         public static UnityEngine.Material WaitingToBust { get => GetMaterial("WaitingToBust"); }
+        public static UnityEngine.Material TileLand { get => GetMaterial("TileLand"); }
+        public static UnityEngine.Material TileBounce { get => GetMaterial("TileBounce"); }
     }
 
     #endregion
