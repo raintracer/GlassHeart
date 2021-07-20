@@ -962,7 +962,7 @@
     "m_Type": "UnityEditor.ShaderGraph.Vector1MaterialSlot",
     "m_ObjectId": "3d1a1ebbb85846b0acedf6487824b014",
     "m_Id": 0,
-    "m_DisplayName": "Lifetime",
+    "m_DisplayName": "LifeTime",
     "m_SlotType": 1,
     "m_Hidden": false,
     "m_ShaderOutputName": "Out",
