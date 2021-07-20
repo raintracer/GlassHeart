@@ -8,11 +8,15 @@ public class PuzzleGrid : MonoBehaviour
     // This collection holds all Griddable objects on the Grid
     private Dictionary<int, Griddable> Tiles;
     private int NextTileID = 1;
+    float ScrollSpeed = 0.1f;
     
     // These collections hold integer keys that correspond with the Dictionary of Griddables
     private int[,] TileGrid;
     private Vector2Int GridSize = new Vector2Int(6, 15);
     private List<int> UnlockedTiles;
+
+    // This collection holds tiles are clearing
+    private HashSet<int> ClearingTiles = new HashSet<int>();
 
     // Clear set logic
     private List<ClearSet> ClearSets = new List<ClearSet>();
@@ -26,7 +30,8 @@ public class PuzzleGrid : MonoBehaviour
     private Vector2Int CursorPosition = new Vector2Int(2, 4);
     private GameObject CursorObject;
     private bool CusorSwitchFlag = false;
-    private bool ScrollBoost = false;
+    private bool ScrollBoostInput = false;
+    private bool ScrollBoostLock = false;
     private int FastScrollCounter = 0;
     private Vector2 Movement = Vector2.zero;
     private Vector2 LastMovement = Vector2.zero;
@@ -34,9 +39,8 @@ public class PuzzleGrid : MonoBehaviour
     // Constants
     private const int CEILING_ROW = 13;
     private const int FLOOR_ROW = 2;
-    private const float SCROLL_BOOST_FACTOR = 40f;
+    private const float SCROLL_BOOST_FACTOR = 20f;
     private const int FAST_SCROLL_FRAMES = 10;
-    [SerializeField] public float TIME;
     private const int DANGER_ROW = 11;
 
     // These properties affect the rendering of Griddables
@@ -64,9 +68,10 @@ public class PuzzleGrid : MonoBehaviour
         Inputs.Enable();
         Inputs.Player.MoveCursor.performed += ctx => Movement = ctx.ReadValue<Vector2>();
         Inputs.Player.SwitchAtCursor.started += ctx => CusorSwitchFlag = true;
-        Inputs.Player.ScrollBoost.performed += ctx => ScrollBoost = true;
-        Inputs.Player.ScrollBoost.canceled += ctx => ScrollBoost = false;
+        Inputs.Player.ScrollBoost.performed += ctx => ScrollBoostInput = true;
+        Inputs.Player.ScrollBoost.canceled += ctx => ScrollBoostInput = false;
 
+        // Instantiate screen for inactive tiles
         TileScreenObject = Instantiate(Resources.Load<GameObject>("TileScreen"), transform);
 
         // Start Music
@@ -117,10 +122,18 @@ public class PuzzleGrid : MonoBehaviour
             }
         }
 
-        // Scroll Grid
-        float ScrollAmount = 0.001f * TIME;
-        if (ScrollBoost) ScrollAmount *= SCROLL_BOOST_FACTOR;
-        if (!RowContainsLockedTiles(CEILING_ROW)) Scroll(ScrollAmount);
+        // Scroll Grid - Lock scroll if there are clearing or falling tiles
+        if (UnlockedTiles.Count == 0 && ClearingTiles.Count == 0)
+        {
+
+            // If the scroll button is pressed while scrolling is legal, lock in the boost scroll speed until another row of tiles is created.
+            if (ScrollBoostInput) ScrollBoostLock = true;
+
+            float ScrollAmount = ScrollSpeed * Time.fixedDeltaTime;
+            if (ScrollBoostLock) ScrollAmount *= SCROLL_BOOST_FACTOR;
+            if (!RowContainsLockedTiles(CEILING_ROW)) Scroll(ScrollAmount);
+
+        }
 
         // Check for tiles to clear
         ProcessClearing();
@@ -328,12 +341,14 @@ public class PuzzleGrid : MonoBehaviour
             // Temporary - Remove Cleared Coordinates and check for chain
             int ListCount = ClearedCoordinatesList.Count;
             int HighestChain = 0;
+
             for (int i = 0; i < ListCount; i++)
             {
                 Vector2Int _TileCoordinate = ClearedCoordinatesList[i];
                 Griddable _Tile = GetTileByGridCoordinate(_TileCoordinate);
                 if (_Tile.ChainLevel > HighestChain) HighestChain = _Tile.ChainLevel;
                 _Tile.Clear(i, ListCount);
+                ClearingTiles.Add(_Tile.KeyID);
             }
 
             // Check for Combo
@@ -681,6 +696,7 @@ public class PuzzleGrid : MonoBehaviour
     {
         int KeyID = _Tile.KeyID;
         UnlockedTiles.Remove(KeyID);
+        ClearingTiles.Remove(KeyID);
         Tiles.Remove(KeyID);
         _Tile.Destroy();
     }
@@ -752,11 +768,13 @@ public class PuzzleGrid : MonoBehaviour
         {
             GridScrollOffset--;
             ShiftGridUp();
+            ScrollBoostLock = false;
         }
         while (GridScrollOffset < 0)
         {
             GridScrollOffset++;
             ShiftGridDown();
+            ScrollBoostLock = false;
         }
 
         UpdateGridTiles();

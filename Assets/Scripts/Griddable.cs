@@ -140,7 +140,7 @@ public abstract class Griddable
     public void FreeFall()
     {
         // Determine predicted new position
-        Vector2 newGridPosition = GridPosition + new Vector2(0, -FALL_SPEED * ParentGrid.TIME);
+        Vector2 newGridPosition = GridPosition + new Vector2(0, -FALL_SPEED);
 
         // Determine if new GridPosition intersects a locked Tile
         Vector2Int GridCheck = new Vector2Int((int)(newGridPosition.x + 0.5f), (int)(newGridPosition.y));
