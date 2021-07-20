@@ -10,11 +10,16 @@ public class TechCounter : MonoBehaviour
     public GameObject GO;
     public enum TechType { Combo, Chain };
 
+    private void Awake()
+    {
+        GO = gameObject;    
+    }
+
     public void StartEffect(TechType _Type, int _Level, Vector2 _WorldPosition)
     {
 
         transform.position = _WorldPosition;
-        TextMeshPro CounterTextMesh = GameObject.Find("CounterText").GetComponent<TextMeshPro>();
+        TextMeshPro CounterTextMesh = GO.transform.Find("CounterText").GetComponent<TextMeshPro>();
         if(_Type == TechType.Chain)
         {
             CounterTextMesh.text = "X" + _Level.ToString();

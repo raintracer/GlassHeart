@@ -138,6 +138,9 @@ public class PuzzleGrid : MonoBehaviour
 
         }
 
+        // If Chain Level is 1, check to clear the chain level
+        CheckForEndOfChain();
+
         // Reposition Tile Screen
         TileScreenObject.transform.position = GridWorldPosition + Vector2.up * (FLOOR_ROW + GridScrollOffset - 1);
 
@@ -313,7 +316,7 @@ public class PuzzleGrid : MonoBehaviour
             if (HighestChain > 0)
             {
                 GameAssets.Sound.Combo1.Play();
-                ChainLevel = HighestChain;
+                ChainLevel++;
                 GameObject CounterObject = Instantiate(Resources.Load<GameObject>("TechCounterObject"));
                 TechCounter Counter = CounterObject.GetComponent<TechCounter>();
                 Counter.StartEffect(TechCounter.TechType.Chain, ChainLevel + 1, new Vector2(1f, 2f));
@@ -325,6 +328,20 @@ public class PuzzleGrid : MonoBehaviour
                 ClearedCoordinatesHash.Clear();
 
         }
+    }
+
+    private void CheckForEndOfChain()
+    {
+        bool ContinueChain = false;
+        foreach(Griddable _Tile in Tiles.Values)
+        {
+            if (_Tile.ChainLevel > 1 || _Tile.IsClearing())
+            {
+                ContinueChain = true;
+                break;
+            }
+        }
+        if (!ContinueChain) ChainLevel = 0;
     }
 
     private int CompareCoordinatesByClearOrderAscending(Vector2Int CoordinateA, Vector2Int CoordinateB)
