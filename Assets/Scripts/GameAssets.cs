@@ -34,7 +34,8 @@ static public class GameAssets
             ["ClearingFlash"] = Resources.Load<UnityEngine.Material>("ClearingFlash"),
             ["WaitingToBust"] = Resources.Load<UnityEngine.Material>("WaitingToBust"),
             ["TileLand"] = Resources.Load<UnityEngine.Material>("TileLand"),
-            ["TileBounce"] = Resources.Load<UnityEngine.Material>("TileBounce")
+            ["TileBounce"] = Resources.Load<UnityEngine.Material>("TileBounce"),
+            ["TechCounterRise"] = Resources.Load<UnityEngine.Material>("TechCounterRise")
         };
     }
 
@@ -53,6 +54,7 @@ static public class GameAssets
         public static UnityEngine.Material WaitingToBust { get => GetMaterial("WaitingToBust"); }
         public static UnityEngine.Material TileLand { get => GetMaterial("TileLand"); }
         public static UnityEngine.Material TileBounce { get => GetMaterial("TileBounce"); }
+        public static UnityEngine.Material TechCounterRise { get => GetMaterial("TechCounterRise"); }
     }
 
     #endregion

@@ -6,7 +6,9 @@ using TMPro;
 public class TechCounter : MonoBehaviour
 {
 
-    const float TECH_COUNTER_LIFETIME = 0.75f;
+    const int TECH_COUNTER_LIFETIME_FRAMES = 45;
+    float ScrollSpeed = .25f;
+
     public GameObject GO;
     TextMeshPro CounterTextMesh;
     SpriteRenderer SR_Background;
@@ -23,6 +25,7 @@ public class TechCounter : MonoBehaviour
     {
 
         transform.position = _WorldPosition;
+
         
         if(_Type == TechType.Chain)
         {
@@ -39,7 +42,11 @@ public class TechCounter : MonoBehaviour
 
     IEnumerator DisplayCountdown()
     {
-        yield return new WaitForSeconds(TECH_COUNTER_LIFETIME);
+        for (int i = 1; i <= TECH_COUNTER_LIFETIME_FRAMES; i++)
+        {
+            transform.position += Vector3.up * (ScrollSpeed / (float) i);
+            yield return new WaitForFixedUpdate();
+        }
         Destroy(gameObject);
     }
 }

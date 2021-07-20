@@ -358,7 +358,7 @@ public class PuzzleGrid : MonoBehaviour
                 GameObject CounterObject = Instantiate(Resources.Load<GameObject>("TechCounterObject"));
                 TechCounter Counter = CounterObject.GetComponent<TechCounter>();
                 Griddable FirstTile = GetTileByGridCoordinate(ClearedCoordinatesList[0]);
-                Counter.StartEffect(TechCounter.TechType.Combo, ClearedCoordinatesHash.Count, (Vector2)FirstTile.GetWorldPosition() + new Vector2(0.5f, 1.75f));
+                Counter.StartEffect(TechCounter.TechType.Combo, ClearedCoordinatesHash.Count, (Vector2)FirstTile.GetWorldPosition() + new Vector2(0.5f, 0.75f));
             }
 
             // Check for chain
@@ -374,7 +374,7 @@ public class PuzzleGrid : MonoBehaviour
                 Vector2 ComboOffset = Vector2.zero;
                 if (ClearedCoordinatesList.Count > 3) ComboOffset = new Vector2(0f, 1f);
 
-                Counter.StartEffect(TechCounter.TechType.Chain, ChainLevel + 1, (Vector2)FirstTile.GetWorldPosition() + ComboOffset + new Vector2(0.5f, 1.75f));
+                Counter.StartEffect(TechCounter.TechType.Chain, ChainLevel + 1, (Vector2)FirstTile.GetWorldPosition() + ComboOffset + new Vector2(0.5f, 0.75f));
             }
 
                 // Create Clear Set (Is this necessary?)

@@ -1,11 +1,8 @@
 TODO:
-
-Scroll Boost in increments of one tile
+Improve Tech Counter:
+	Better Sprite and Text
+	Rising Animation
 
 
 
 DONE:
-Only scroll when there is no clearing or falling tiles
-- Add clearing tiles to a HashSet
-- Remove clearing tiles from Hashset when they are done clearing
-- Only scroll when UnlockedTiles and HashSet are both empty
