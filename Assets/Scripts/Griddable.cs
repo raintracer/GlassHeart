@@ -2,6 +2,12 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+
+/// <summary>
+/// Griddable is a base class for tile-entities. PuzzleGrid manages all Griddables in a shared collection.
+/// Each Griddable, regardless of type, has a unique KeyID (int) assigned by PuzzleGrid,
+/// and should be stored in the PuzzleGrid's Tiles collection for its lifetime.
+/// </summary>
 public abstract class Griddable
 {
 
@@ -10,10 +16,10 @@ public abstract class Griddable
     protected SpriteRenderer SR_Background;
     protected SpriteRenderer SR_Icon;
     readonly protected Mono mono;
-    readonly protected PuzzleGrid ParentGrid;
+    readonly public PuzzleGrid ParentGrid;
 
     // Type Fields
-    public enum TileType { Basic, SwapTemp }
+    public enum TileType { Basic, SwapTemp, Block }
     public abstract TileType Type { get; protected set; }
     
     // Grid Fields
@@ -22,7 +28,7 @@ public abstract class Griddable
     public int KeyID { get; private set; }
 
     // Constant or Read-Only Fields
-    const float FALL_SPEED = 0.4F;
+    protected const float FALL_SPEED = 0.4F;
     readonly static int SWAP_FRAMES = 4;
     readonly static int CLEAR_FLASH_FRAMES = 40;
     readonly static int CLEAR_BUST_DELAY_FRAMES = 10;
@@ -137,7 +143,7 @@ public abstract class Griddable
         UpdateObjectPosition();
     }
 
-    public void FreeFall()
+    virtual public void FreeFall()
     {
         // Determine predicted new position
         Vector2 newGridPosition = GridPosition + new Vector2(0, -FALL_SPEED);
@@ -146,16 +152,7 @@ public abstract class Griddable
         Vector2Int GridCheck = new Vector2Int((int)(newGridPosition.x + 0.5f), (int)(newGridPosition.y));
         Vector2Int AttachPoint = GridCheck;
 
-        if (GridCheck.y < 0)
-        {
-            // Request Attachment
-            do
-            {
-                AttachPoint = AttachPoint + Vector2Int.up;
-            } while (!ParentGrid.RequestAttachment(this, AttachPoint));
-            GameAssets.Sound.TileLand.Play();
-        }
-        else if (ParentGrid.GetTileKeyAtGridCoordinate(GridCheck) != 0)
+       if (GridCheck.y < 0 || ParentGrid.GetTileKeyAtGridCoordinate(GridCheck) != 0)
         {
             // Request Attachment
             do
@@ -201,7 +198,12 @@ public abstract class Griddable
 
         // Play landing animation
         ChangeAnimation(Animation.Land);
+
+        OnAttach();
+
     }
+
+    virtual protected void OnAttach() { }
 
     #endregion
 
@@ -217,7 +219,7 @@ public abstract class Griddable
         return (Swappable && (state == State.Set));
     }
 
-    public bool FallAllowed()
+    virtual public bool FallAllowed()
     {
         return (state == State.Set);
     }

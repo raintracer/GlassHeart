@@ -2,18 +2,28 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// The main player object. Handles inputs and all activity within the player grid-space.
+/// This includes all spawning of objects.
+/// </summary>
 public class PuzzleGrid : MonoBehaviour
 {
 
     // This collection holds all Griddable objects on the Grid
     private Dictionary<int, Griddable> Tiles;
     private int NextTileID = 1;
+    private int NextBlockID = 1;
     float ScrollSpeed = 0.1f;
     
     // These collections hold integer keys that correspond with the Dictionary of Griddables
     private int[,] TileGrid;
     private Vector2Int GridSize = new Vector2Int(6, 15);
     private List<int> UnlockedTiles;
+
+    // This collection holds the block entities
+    private Dictionary<int, Block> Blocks = new Dictionary<int, Block>();
+    private List<Vector2Int> BlockQueue = new List<Vector2Int>();
+
 
     // This collection holds tiles are clearing
     private HashSet<int> ClearingTiles = new HashSet<int>();
@@ -29,12 +39,12 @@ public class PuzzleGrid : MonoBehaviour
     private ControlMap Inputs;
     private Vector2Int CursorPosition = new Vector2Int(2, 4);
     private GameObject CursorObject;
+    private Vector2 Movement = Vector2.zero;
+    private Vector2 LastMovement = Vector2.zero;
+    private int FastScrollCounter = 0;
     private bool CusorSwitchFlag = false;
     private bool ScrollBoostInput = false;
     private bool ScrollBoostLock = false;
-    private int FastScrollCounter = 0;
-    private Vector2 Movement = Vector2.zero;
-    private Vector2 LastMovement = Vector2.zero;
 
     // Constants
     private const int CEILING_ROW = 13;
@@ -42,9 +52,19 @@ public class PuzzleGrid : MonoBehaviour
     private const float SCROLL_BOOST_FACTOR = 20f;
     private const int FAST_SCROLL_FRAMES = 10;
     private const int DANGER_ROW = 11;
+    private const int BLOCK_SPAWN_ROW = 15;
 
     // These properties affect the rendering of Griddables
+
+    /// <summary> 
+    /// Describes the relative position of the grid-space to world-space. 
+    /// </summary>
     public Vector2 GridWorldPosition { get; private set; }
+
+    /// <summary>
+    /// Holds a float between 0 and 1 that is responsible for smoothing the movement of the grid up and down.
+    /// Once it reaches 1 or higher, all grid references are shifted by one position, and this resets.
+    /// </summary>
     public float GridScrollOffset { get; private set; }
 
     // Tile screen handlers
@@ -78,24 +98,17 @@ public class PuzzleGrid : MonoBehaviour
         GameAssets.Sound.StoneRock.Play();
     }
 
-    //private void OnDraw()
-    //{
-    //    // Draw Debug Grid
-    //    Gizmos.color = Color.red;
-    //    for (int i = 0; i < GridSize.x; i++)
-    //    {
-    //        for (int j = 0; j < GridSize.y; j++)
-    //        {
-    //            if (TileGrid[i,j] != 0)
-    //            {
-    //                Gizmos.DrawWireCube((Vector3)GridWorldPosition + new Vector3(0, GridScrollOffset, 0) + new Vector3(i, j, 0) + Vector3.up / 2 + Vector3.right / 2, Vector3.one);
-    //            }
-    //        }
-    //    }
-    //}
-
     void FixedUpdate()
     {
+
+        // Spawn blocks for testing
+        if ((Time.time - 9) % 10 == 0)
+        {
+            QueueBlock(new Vector2Int(6, 1));
+        }
+
+        // Check the block queue for a valid spawn
+        CheckBlockQueueForSpawn();
 
         // Move Cursor
         HandleCursorMovement();
@@ -172,7 +185,7 @@ public class PuzzleGrid : MonoBehaviour
                 Griddable _Tile = GetTileByGridCoordinate(new Vector2Int(i, j));
                 if (_Tile != null)
                 {
-                    if (ColumnInDanger(i))
+                    if (IsColumnInDanger(i))
                     {
 
                         _Tile.RequestBounceStart();
@@ -187,11 +200,17 @@ public class PuzzleGrid : MonoBehaviour
 
     }
 
-    private bool ColumnInDanger(int _Column)
+    /// <summary>
+    /// Checks if the specified grid column has a locked tile in the danger row.
+    /// </summary>
+    private bool IsColumnInDanger(int _Column)
     {
         return (TileGrid[_Column, DANGER_ROW] != 0);
     }
 
+    /// <summary>
+    /// Processes and clears all GridRequests queued since last update.
+    /// </summary>
     private void ProcessGridRequests()
     {
 
@@ -244,6 +263,10 @@ public class PuzzleGrid : MonoBehaviour
 
     }
 
+    /// <summary>
+    /// Handles all cursor movement, including fast scrolling after the same direction has been held
+    /// for more frames than specified by FAST_SCROLL_FRAMES.
+    /// </summary>
     private void HandleCursorMovement()
     {
 
@@ -279,6 +302,10 @@ public class PuzzleGrid : MonoBehaviour
 
     }
 
+    /// <summary>
+    /// Check for tiles that are eligible to clear. Handles clear commands to tiles,
+    /// and checks for tech (combos and chains).
+    /// </summary>
     private void ProcessClearing() // Check for matches and set tiles to clear
     {
 
@@ -385,6 +412,9 @@ public class PuzzleGrid : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Determines when the current chain has ended. Resets chain level to 0 if so.
+    /// </summary>
     private void CheckForEndOfChain()
     {
         bool ContinueChain = false;
@@ -399,6 +429,9 @@ public class PuzzleGrid : MonoBehaviour
         if (!ContinueChain) ChainLevel = 0;
     }
 
+    /// <summary>
+    /// List comparer method. Clear order goes from top to bottom, left to right of the grid-space.
+    /// </summary>
     private int CompareCoordinatesByClearOrderAscending(Vector2Int CoordinateA, Vector2Int CoordinateB)
     {
         if (CoordinateA == CoordinateB) return 0;
@@ -484,9 +517,9 @@ public class PuzzleGrid : MonoBehaviour
     #endregion
 
     #region Tile Methods
-    Griddable GetTileByGridCoordinate(Vector2Int GridPosition)
+    Griddable GetTileByGridCoordinate(Vector2Int GridCoordinate)
     {
-        int TileKey = TileGrid[GridPosition.x, GridPosition.y];
+        int TileKey = TileGrid[GridCoordinate.x, GridCoordinate.y];
         return GetTileByID(TileKey);
     }
 
@@ -629,8 +662,10 @@ public class PuzzleGrid : MonoBehaviour
 
     public bool RequestAttachment(Griddable _Tile, Vector2Int _GridCoordinate)
     {
+        
         if (TileGrid[_GridCoordinate.x, _GridCoordinate.y] != 0)
         {
+            Debug.Break();
             Debug.LogWarning("Tile requested attachment to an occupied grid-space.");
             return false;
         }
@@ -640,6 +675,15 @@ public class PuzzleGrid : MonoBehaviour
     }
 
     private bool RowContainsLockedTiles(int RowIndex)
+    {
+        for (int i = 0; i < GridSize.x; i++)
+        {
+            if (TileGrid[i, RowIndex] != 0) return true;
+        }
+        return false;
+    }
+
+    private bool RowContainsUnlockedTiles(int RowIndex)
     {
         for (int i = 0; i < GridSize.x; i++)
         {
@@ -699,6 +743,69 @@ public class PuzzleGrid : MonoBehaviour
         ClearingTiles.Remove(KeyID);
         Tiles.Remove(KeyID);
         _Tile.Destroy();
+    }
+
+    #endregion
+
+    #region Block Methods
+
+    private void QueueBlock(Vector2Int _BlockSize)
+    {
+        BlockQueue.Add(_BlockSize);
+    }
+
+    private void CheckBlockQueueForSpawn()
+    {
+        
+        // Return if the block queue is empty
+        if (BlockQueue.Count == 0) return;
+
+        // Determine if the spawn area is clear for a block
+        bool SpawnRowIsClear = true;
+        for(int i = 0; i < GridSize.x; i++)
+        {
+            if (CoordinateContainsFreeTile(new Vector2Int(i, BLOCK_SPAWN_ROW))) {
+                SpawnRowIsClear = false;
+                break;
+            }
+        }
+
+        // If clear, spawn the next block and clear the list entry
+        if (SpawnRowIsClear)
+        {
+            SpawnBlock(new Vector2(0f, BLOCK_SPAWN_ROW), BlockQueue[0]);
+            BlockQueue.RemoveAt(0);
+        }
+
+
+    }
+
+    private int SpawnBlock(Vector2 _GridPosition, Vector2Int _BlockSize)
+    {
+        Block _Block = new Block(NextBlockID, _BlockSize, _GridPosition);
+        Blocks.Add(NextBlockID, _Block);
+
+        // Create BlockTiles
+        for (int i = 0; i <  _BlockSize.x; i++)
+        {
+            for (int j = 0; j < _BlockSize.y; j++)
+            {
+                int KeyID = NextTileID; 
+                CreateNewBlockTile(_Block, _GridPosition + new Vector2(i, j), false);
+                BlockTile _BlockTile = (BlockTile) GetTileByID(KeyID);
+                if (_BlockTile == null) Debug.LogError("Recently created block not found or cast correctly.");
+                _Block.AddBlockTile(_BlockTile);
+            }
+        }
+
+        return NextBlockID++;
+    }
+
+    int CreateNewBlockTile(Block _Block, Vector2 _GridPosition, bool _LockedToGrid)
+    {
+        Tiles.Add(NextTileID, new BlockTile(this, NextTileID, _GridPosition, _LockedToGrid, _Block));
+        if (!_LockedToGrid) UnlockedTiles.Add(NextTileID);
+        return NextTileID++;
     }
 
     #endregion
