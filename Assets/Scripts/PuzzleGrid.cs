@@ -1,19 +1,22 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
+using Mirror;
 
-public class PuzzleGrid : MonoBehaviour
+
+public class PuzzleGrid : NetworkBehaviour
 {
 
     // This collection holds all Griddable objects on the Grid
-    private Dictionary<int, Griddable> Tiles;
+    private Dictionary<int, Griddable> Tiles = new Dictionary<int, Griddable>();
     private int NextTileID = 1;
     float ScrollSpeed = 0.1f;
     
     // These collections hold integer keys that correspond with the Dictionary of Griddables
     private int[,] TileGrid;
     private Vector2Int GridSize = new Vector2Int(6, 15);
-    private List<int> UnlockedTiles;
+    private List<int> UnlockedTiles = new List<int>();
 
     // This collection holds tiles are clearing
     private HashSet<int> ClearingTiles = new HashSet<int>();
@@ -23,13 +26,13 @@ public class PuzzleGrid : MonoBehaviour
     private int ChainLevel = 0;
 
     // This collection holds asynchronous update requests to process
-    private List<GridRequest> GridRequests;
+    private List<GridRequest> GridRequests = new List<GridRequest>();
 
     // Input-related declarations
     private ControlMap Inputs;
     private Vector2Int CursorPosition = new Vector2Int(2, 4);
     private GameObject CursorObject;
-    private bool CusorSwitchFlag = false;
+    private bool CursorSwitchFlag = false;
     private bool ScrollBoostInput = false;
     private bool ScrollBoostLock = false;
     private int FastScrollCounter = 0;
@@ -44,71 +47,80 @@ public class PuzzleGrid : MonoBehaviour
     private const int DANGER_ROW = 11;
 
     // These properties affect the rendering of Griddables
-    public Vector2 GridWorldPosition { get; private set; }
-    public float GridScrollOffset { get; private set; }
+    [SyncVar] public Vector2 GridWorldPosition;
+    [SyncVar] public float GridScrollOffset;
 
     // Tile screen handlers
     GameObject TileScreenObject;
 
+    bool Initialized = false;
+
     #region Unity Events
 
-    void Awake()
+    override public void OnStartClient()
     {
-        GridWorldPosition = transform.position + new Vector3(1, -1, 0);
-        Tiles = new Dictionary<int, Griddable>();
-        UnlockedTiles = new List<int>();
-        GridRequests = new List<GridRequest>();
-        CreateInitialTileGrid();
-        
-        CursorObject = Instantiate(Resources.Load<GameObject>("PuzzleCursorPrefab"), transform);
-        UpdateCursorPosition();
+        InitializeGrid();
+    }
+
+    [Command]
+    public void InitializeGrid()
+    {
 
         // INITIALIZE CONTROLS
         Inputs = new ControlMap();
         Inputs.Enable();
-        Inputs.Player.MoveCursor.performed += ctx => Movement = ctx.ReadValue<Vector2>();
-        Inputs.Player.SwitchAtCursor.started += ctx => CusorSwitchFlag = true;
-        Inputs.Player.ScrollBoost.performed += ctx => ScrollBoostInput = true;
-        Inputs.Player.ScrollBoost.canceled += ctx => ScrollBoostInput = false;
+        //Inputs.Player.MoveCursor.performed += ctx => Movement = ctx.ReadValue<Vector2>();
+        //Inputs.Player.SwitchAtCursor.started += ctx => CusorSwitchFlag = true;
+        //Inputs.Player.ScrollBoost.performed += ctx => ScrollBoostInput = true;
+        //Inputs.Player.ScrollBoost.canceled += ctx => ScrollBoostInput = false;
+
+        // Prepare Puzzle Grid
+        if (GameObject.FindGameObjectsWithTag("Grid").GetUpperBound(0) > 0)
+        {
+            transform.position = new Vector3(3f, 0f, 0f);
+        }
+        else
+        {
+            transform.position = new Vector3(10f, 0f, 0f);
+        }
+        GridWorldPosition = transform.position + new Vector3(1, -1, 0);
+        CreateInitialTileGrid();
+        
+        // Create cursor
+        CursorObject = Instantiate(Resources.Load<GameObject>("PuzzleCursorPrefab"), transform);
+        NetworkServer.Spawn(CursorObject);
+        UpdateCursorPosition();        
 
         // Instantiate screen for inactive tiles
         TileScreenObject = Instantiate(Resources.Load<GameObject>("TileScreen"), transform);
 
         // Start Music
         GameAssets.Sound.StoneRock.Play();
-    }
 
-    //private void OnDraw()
-    //{
-    //    // Draw Debug Grid
-    //    Gizmos.color = Color.red;
-    //    for (int i = 0; i < GridSize.x; i++)
-    //    {
-    //        for (int j = 0; j < GridSize.y; j++)
-    //        {
-    //            if (TileGrid[i,j] != 0)
-    //            {
-    //                Gizmos.DrawWireCube((Vector3)GridWorldPosition + new Vector3(0, GridScrollOffset, 0) + new Vector3(i, j, 0) + Vector3.up / 2 + Vector3.right / 2, Vector3.one);
-    //            }
-    //        }
-    //    }
-    //}
+        Initialized = true;
+    }
 
     void FixedUpdate()
     {
 
+        if (!Initialized) return;
+        if (isLocalPlayer) return;
+
         // Move Cursor
         HandleCursorMovement();
 
-        // Process Grid Requests
-        ProcessGridRequests();
-
         // Swap at cursor
-        if (CusorSwitchFlag)
+        if (CursorSwitchFlag)
         {
-            CusorSwitchFlag = false;
+            CursorSwitchFlag = false;
             SwitchAtCursor();
         }
+
+        // Updated Grid World Position
+        GridWorldPosition = transform.position + new Vector3(1, -1, 0);
+
+        // Process Grid Requests
+        ProcessGridRequests();
 
         // Run Free Tile Physics
         if (UnlockedTiles.Count != 0)
@@ -187,10 +199,58 @@ public class PuzzleGrid : MonoBehaviour
 
     }
 
+    #region Input Methods (Client Side)
+
+    [Client]
+    public void OnMoveCursor(InputValue ctx)
+    {
+        Debug.Log("Movement input logged.");
+        if(isLocalPlayer) ServerMoveCursor(ctx.Get<Vector2>());
+    }
+
+    [Client]
+    public void OnSwitchAtCursor(InputValue ctx)
+    {
+        if (isLocalPlayer) ServerSwitchAtCursor(ctx.isPressed);
+    }
+
+    [Client]
+    public void OnScrollBoost(InputValue ctx)
+    {
+        if (isLocalPlayer) ServerScrollBoost(ctx.isPressed); 
+    }
+
+    #endregion
+
+    #region Input Methods (Server Side)
+
+    [Command]
+    public void ServerMoveCursor(Vector2 _Movement)
+    {
+        Debug.Log("Received move command from client.");
+        Movement = _Movement;
+    }
+
+    [Command]
+    public void ServerSwitchAtCursor(bool _IsPressed)
+    {
+        CursorSwitchFlag = _IsPressed;
+    }
+
+    [Command]
+    public void ServerScrollBoost(bool _IsPressed)
+    {
+        ScrollBoostInput = _IsPressed;
+    }
+
+    #endregion
+
     private bool ColumnInDanger(int _Column)
     {
         return (TileGrid[_Column, DANGER_ROW] != 0);
     }
+
+    
 
     private void ProcessGridRequests()
     {
@@ -276,6 +336,7 @@ public class PuzzleGrid : MonoBehaviour
         }
 
         LastMovement = Movement;
+        UpdateCursorPosition();
 
     }
 
@@ -421,7 +482,6 @@ public class PuzzleGrid : MonoBehaviour
             Vector2Int OldCursorPosition = CursorPosition;
             CursorPosition += new Vector2Int((int)_Movement.x, (int)_Movement.y);
             CursorPosition.Clamp(new Vector2Int(0, FLOOR_ROW), new Vector2Int(GridSize.x - 2, CEILING_ROW));
-            UpdateCursorPosition();
             if (!FastScroll && CursorPosition != OldCursorPosition) GameAssets.Sound.CursorClick.Play(); 
         }
         LastMovement = _Movement;
@@ -454,13 +514,17 @@ public class PuzzleGrid : MonoBehaviour
         // GENERATE SWAPTEMP TILES IN PLACE OF NULLS
         if (TileA == null)
         {
-            AttachTileToGrid(GetTileByID(CreateNewSwapTempTile(CursorPosition)), CursorPosition);
+            int KeyID = NextTileID;
+            CreateNewSwapTempTile(CursorPosition);
+            AttachTileToGrid(GetTileByID(KeyID), CursorPosition);
             TileA = GetTileByGridCoordinate(CursorPosition);
         }
         else if (TileB == null)
         {
-            AttachTileToGrid(GetTileByID(CreateNewSwapTempTile(CursorPosition + Vector2Int.right)), CursorPosition + Vector2Int.right);
-            TileB = GetTileByGridCoordinate(CursorPosition + Vector2Int.right);
+            int KeyID = NextTileID;
+            CreateNewSwapTempTile(CursorPosition + Vector2Int.right);
+            AttachTileToGrid(GetTileByID(KeyID), CursorPosition + Vector2Int.right);
+            TileA = GetTileByGridCoordinate(CursorPosition + Vector2Int.right);
         }
 
         // SWAP VALUES
@@ -525,25 +589,51 @@ public class PuzzleGrid : MonoBehaviour
         {
             for (int j = 0; j < i*2 + 2; j++)
             {
-                AttachTileToGrid(GetTileByID(CreateNewBasicTile(GameAssets.GetRandomTileColor(), new Vector2(i,j), true)), new Vector2Int(i, j));
+                int KeyID = NextTileID;
+                CreateNewBasicTile(GameAssets.GetRandomTileColor(), new Vector2(i, j), true);
+                AttachTileToGrid(GetTileByID(KeyID), new Vector2Int(i, j));
             }
         }
 
     }
 
-    int CreateNewBasicTile(BasicTile.TileColor _Color, Vector2 _GridPosition, bool _LockedToGrid)
+    void CreateNewBasicTile(BasicTile.TileColor _Color, Vector2 _GridPosition, bool _LockedToGrid)
     {
+
         int TileID = NextTileID;
-        Tiles.Add(NextTileID++, new BasicTile(this, TileID, _Color, _GridPosition, _LockedToGrid));
+        GameObject _TileObject = Instantiate(Resources.Load<GameObject>("BasicTile"), transform);
+        BasicTile _Tile = _TileObject.GetComponent<BasicTile>();
+        _Tile.InitializeDerived(this, TileID, _GridPosition, _LockedToGrid, _Color);
+        NetworkServer.Spawn(_TileObject);
+        _Tile.UpdateSpriteServer();
+        ClientAssignTileParent(_TileObject);
+
+        // Tell client to make the grid the parent to the new tile
+
+        Tiles.Add(NextTileID++, _Tile);
         if (!_LockedToGrid) UnlockedTiles.Add(TileID);
-        return TileID;
+
     }
 
-    int CreateNewSwapTempTile(Vector2 _GridPosition)
+    void CreateNewSwapTempTile(Vector2 _GridPosition)
     {
         int TileID = NextTileID;
-        Tiles.Add(NextTileID++, new SwapTempTile(this, TileID, _GridPosition));
-        return TileID;
+        GameObject _TileObject = Instantiate(Resources.Load<GameObject>("SwapTempTile"), transform);
+        SwapTempTile _Tile = _TileObject.GetComponent<SwapTempTile>();
+        _Tile.InitializeDerived(this, TileID, _GridPosition);
+        NetworkServer.Spawn(_TileObject);
+        _Tile.UpdateSpriteServer();
+        ClientAssignTileParent(_TileObject);
+
+        Tiles.Add(NextTileID++, _Tile);
+
+    }
+
+
+    [ClientRpc]
+    void ClientAssignTileParent(GameObject _TileObject)
+    {
+        _TileObject.transform.parent = transform;
     }
 
     void AttachTileToGrid(Griddable _Tile, Vector2Int _GridCoordinate)
@@ -716,7 +806,10 @@ public class PuzzleGrid : MonoBehaviour
                 else
                 {
                     TileGrid[i, j] = 0;
-                    AttachTileToGrid(GetTileByID(CreateNewBasicTile(GameAssets.GetRandomTileColor(), new Vector2(i, j), true)), new Vector2Int(i, j));
+
+                    int KeyID = NextTileID;
+                    CreateNewBasicTile(GameAssets.GetRandomTileColor(), new Vector2(i, j), true);
+                    AttachTileToGrid(GetTileByID(KeyID), new Vector2Int(i, j));
                 }
             }
         }

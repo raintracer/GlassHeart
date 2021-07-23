@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4425822982132915620}
   - component: {fileID: 7767777847899602097}
+  - component: {fileID: -6686081132503566214}
   m_Layer: 0
   m_Name: ParticleController
   m_TagString: Untagged
@@ -44,3 +45,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ParticleObject: {fileID: 0}
+--- !u!114 &-6686081132503566214
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1669600458230268928}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b91ecbcc199f4492b9a91e820070131, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sceneId: 0
+  serverOnly: 0
+  visible: 0
+  m_AssetId: c5c36b11cb4a32f4eb64a1033a41f800
+  hasSpawned: 0

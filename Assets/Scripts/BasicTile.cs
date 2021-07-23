@@ -1,24 +1,37 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Mirror;
 
 public class BasicTile : Griddable
 {
     public enum TileColor { Green, Blue, Indigo, Yellow, Red, Purple }
 
-    public TileColor Color { get; protected set; }
+    [SyncVar] public TileColor Color;
     override public TileType Type { get; protected set; } = TileType.Basic;
     override public bool Swappable { get; protected set; } = true;
 
 
-    public BasicTile(PuzzleGrid Grid, int _Key, TileColor _Color, Vector2 _GridPos, bool _LockedToGrid) : base(Grid, _Key, _GridPos, _LockedToGrid)
+    public void InitializeDerived(PuzzleGrid _ParentGrid, int _KeyID, Vector2 _GridPosition, bool _LockedToGrid, TileColor _Color)
     {
         Color = _Color;
-        UpdateSprite();
+        base.Initialize(_ParentGrid, _KeyID, _GridPosition, _LockedToGrid);
     }
 
-    protected override void UpdateSprite()
+    [Server]
+    public override void UpdateSpriteServer()
     {
+        SR_Background.sprite = GameAssets.GetBackgroundSpriteByTileColor(Color);
+        SR_Icon.sprite = GameAssets.GetIconSpriteByTileColor(Color);
+        UpdateSpriteClient();
+    }
+
+    [ClientRpc]
+    public override void UpdateSpriteClient()
+    {
+        SR_Background = gameObject.transform.Find("TileBackground").GetComponent<SpriteRenderer>();
+        SR_Icon = gameObject.transform.Find("TileIcon").GetComponent<SpriteRenderer>();
+
         SR_Background.sprite = GameAssets.GetBackgroundSpriteByTileColor(Color);
         SR_Icon.sprite = GameAssets.GetIconSpriteByTileColor(Color);
     }

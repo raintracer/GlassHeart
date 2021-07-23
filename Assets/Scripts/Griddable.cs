@@ -2,22 +2,22 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
-public abstract class Griddable
+using Mirror;
+
+public abstract class Griddable: NetworkBehaviour
 {
 
     // Component Fields
-    readonly protected GameObject GO;
     protected SpriteRenderer SR_Background;
     protected SpriteRenderer SR_Icon;
-    readonly protected Mono mono;
-    readonly protected PuzzleGrid ParentGrid;
+    protected PuzzleGrid ParentGrid;
 
     // Type Fields
     public enum TileType { Basic, SwapTemp }
     public abstract TileType Type { get; protected set; }
-    
+
     // Grid Fields
-    public Vector2 GridPosition { get; private set; }
+    [SyncVar] public Vector2 GridPosition;
     public Vector2Int GridCoordinate { get; private set; }
     public int KeyID { get; private set; }
 
@@ -42,42 +42,49 @@ public abstract class Griddable
     public abstract bool Swappable { get; protected set; }
 
 
-    protected Griddable(PuzzleGrid newParentGrid, int newKeyID, Vector2 newGridPosition, bool newLockedToGrid)
+    protected void Awake()
     {
-
-        ParentGrid = newParentGrid;
-        GridPosition = newGridPosition;
-        LockedToGrid = newLockedToGrid;
-        KeyID = newKeyID;
-
-        GO = Object.Instantiate<GameObject>(Resources.Load<GameObject>("BasicTile"), ParentGrid.transform);
-        mono = GO.AddComponent<Mono>(); 
-        GO.transform.position = ParentGrid.GridWorldPosition + GridPosition;
-
-        SR_Background = GO.transform.Find("TileBackground").GetComponent<SpriteRenderer>();
-        SR_Icon = GO.transform.Find("TileIcon").GetComponent<SpriteRenderer>();
-
-        state = LockedToGrid ? State.Set : State.Free;
-
+        enabled = false;
     }
 
-    protected virtual void UpdateSprite() { }
+    public virtual void Initialize(PuzzleGrid _ParentGrid, int _KeyID, Vector2 _GridPosition, bool _LockedToGrid)
+    {
+        ParentGrid = _ParentGrid;
+        GridPosition = _GridPosition;
+        LockedToGrid = _LockedToGrid;
+        KeyID = _KeyID;
+        SR_Background = gameObject.transform.Find("TileBackground").GetComponent<SpriteRenderer>();
+        SR_Icon = gameObject.transform.Find("TileIcon").GetComponent<SpriteRenderer>();
+        gameObject.transform.position = ParentGrid.GridWorldPosition + GridPosition;
+
+        state = LockedToGrid ? State.Set : State.Free;
+        enabled = true;
+    }
+
+    public virtual void UpdateSpriteServer() { }
+    public virtual void UpdateSpriteClient() { }
 
     public void SetGridPosition(Vector2 newGridPosition)
     {
         GridPosition = newGridPosition;
-        UpdateObjectPosition();
+        UpdateObjectPositionServer();
     }
 
-    protected void UpdateObjectPosition() {
-        GO.transform.position = ParentGrid.GridWorldPosition + GridPosition + new Vector2(0, ParentGrid.GridScrollOffset);
+    protected void UpdateObjectPositionServer() {
+        gameObject.transform.position = ParentGrid.GridWorldPosition + GridPosition + new Vector2(0, ParentGrid.GridScrollOffset);
+    }
+
+    [ClientRpc]
+    protected void UpdateObjectPositionClient()
+    {
+        gameObject.transform.position = ParentGrid.GridWorldPosition + GridPosition + new Vector2(0, ParentGrid.GridScrollOffset);
     }
 
     #region Public Field Accessors
 
     public Vector3 GetWorldPosition()
     {
-        return GO.transform.position;
+        return gameObject.transform.position;
     }
 
     public bool IsClearing()
@@ -121,7 +128,7 @@ public abstract class Griddable
 
     public void Destroy()
     {
-        GameObject.Destroy(GO);
+        GameObject.Destroy(gameObject);
     }
 
     public void Clear(int ClearOrder, int ClearTotal)
@@ -134,7 +141,7 @@ public abstract class Griddable
     {
         //if (LockedToGrid) Debug.LogError("Tried to shift a locked Griddable. Unlock first.");
         GridPosition += new Vector2(0, _ShiftAmount);
-        UpdateObjectPosition();
+        UpdateObjectPositionServer();
     }
 
     public void FreeFall()
@@ -235,7 +242,7 @@ public abstract class Griddable
         // Stop any running Animation Routine
         if (AnimationRoutine != null)
         {
-            mono.StopCoroutine(AnimationRoutine);
+            StopCoroutine(AnimationRoutine);
         }
 
         // Reset Materials
@@ -249,16 +256,16 @@ public abstract class Griddable
                 
                 break;
             case Animation.Swap:
-                AnimationRoutine = mono.StartCoroutine(AnimateSwap(BoolCommand));
+                AnimationRoutine = StartCoroutine(AnimateSwap(BoolCommand));
                 break;
             case Animation.Clear:
-                AnimationRoutine = mono.StartCoroutine(AnimateClear(IntCommand1, IntCommand2));
+                AnimationRoutine = StartCoroutine(AnimateClear(IntCommand1, IntCommand2));
                 break;
             case Animation.Land:
-                AnimationRoutine = mono.StartCoroutine(AnimateLand());
+                AnimationRoutine = StartCoroutine(AnimateLand());
                 break;
             case Animation.Bounce:
-                AnimationRoutine = mono.StartCoroutine(AnimateBounce());
+                AnimationRoutine = StartCoroutine(AnimateBounce());
                 break;
             default:
                 Debug.LogError("Unrecognized animation requested: " + _Animation);
@@ -332,8 +339,9 @@ public abstract class Griddable
         SR_Icon.sprite = null;
         GameAssets.Sound.DefaultBust.Play();
 
-        ParticleController Particles = GameObject.Instantiate(Resources.Load<GameObject>("ParticleController")).GetComponent<ParticleController>();
-        Particles.StartParticle("TilePop", GO.transform.position + new Vector3(0.5f, 0.5f, 0f), 0.5f);
+        GameObject ParticleControllerObject = GameObject.Instantiate(Resources.Load<GameObject>("ParticleController"));
+        ParticleController Particles = ParticleControllerObject.GetComponent<ParticleController>();
+        Particles.StartParticle("TilePop", gameObject.transform.position + new Vector3(0.5f, 0.5f, 0f), 0.5f);
 
         // Wait for others in the clear set to all bust
         for (int i = 0; i < (ClearTotal - ClearOrder) * CLEAR_BUST_DELAY_FRAMES; i++)

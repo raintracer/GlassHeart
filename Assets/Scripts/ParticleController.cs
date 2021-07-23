@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Mirror;
 
 public class ParticleController : MonoBehaviour
 {
@@ -8,6 +9,7 @@ public class ParticleController : MonoBehaviour
     float LifeTime;
     public GameObject ParticleObject;
 
+    [Server]
     public void StartParticle(string ParticleName, Vector2 ParticlePosition, float LifeTime)
     {
         this.LifeTime = LifeTime;
@@ -22,8 +24,10 @@ public class ParticleController : MonoBehaviour
 
     }
 
+    [Server]
     IEnumerator ParticleCountdown()
     {
+        NetworkServer.Spawn(gameObject);
         yield return new WaitForSeconds(LifeTime);
         Destroy(ParticleObject);
         Destroy(gameObject);
