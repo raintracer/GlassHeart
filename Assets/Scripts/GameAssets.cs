@@ -78,7 +78,9 @@ static public class GameAssets
             ["TileYellowIcon"] = Resources.Load<UnityEngine.Sprite>("Tile-Yellow-Icon"),
             ["TilePurpleIcon"] = Resources.Load<UnityEngine.Sprite>("Tile-Purple-Icon"),
             ["TileGreenIcon"] = Resources.Load<UnityEngine.Sprite>("Tile-Green-Icon"),
-            ["BlockTile"] = Resources.Load<UnityEngine.Sprite>("BlockTile")
+            ["BlockTileSingleLeft"] = Resources.Load<UnityEngine.Sprite>("BlockTileSingleLeft"),
+            ["BlockTileSingleCenter"] = Resources.Load<UnityEngine.Sprite>("BlockTileSingleCenter"),
+            ["BlockTileSingleRight"] = Resources.Load<UnityEngine.Sprite>("BlockTileSingleRight")
         };
     }
 
@@ -103,7 +105,9 @@ static public class GameAssets
         public static UnityEngine.Sprite TileYellowIcon { get => GetSprite("TileYellowIcon"); }
         public static UnityEngine.Sprite TileIndigoIcon { get => GetSprite("TileIndigoIcon"); }
         public static UnityEngine.Sprite TilePurpleIcon { get => GetSprite("TilePurpleIcon"); }
-        public static UnityEngine.Sprite BlockTile { get => GetSprite("BlockTile"); }
+        public static UnityEngine.Sprite BlockTileSingleLeft { get => GetSprite("BlockTileSingleLeft"); }
+        public static UnityEngine.Sprite BlockTileSingleCenter { get => GetSprite("BlockTileSingleCenter"); }
+        public static UnityEngine.Sprite BlockTileSingleRight { get => GetSprite("BlockTileSingleRight"); }
     }
 
     #endregion

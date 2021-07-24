@@ -54,6 +54,10 @@ public class PuzzleGrid : MonoBehaviour
     private const int DANGER_ROW = 11;
     private const int BLOCK_SPAWN_ROW = 14;
 
+    // Failure Conditions
+    private float Health = 2f;
+    private float StopTime = 0f;
+
     // These properties affect the rendering of Griddables
 
     /// <summary> 
@@ -102,7 +106,7 @@ public class PuzzleGrid : MonoBehaviour
     {
 
         // Spawn blocks for testing
-        if ((Time.time) % 3 == 0)
+        if ((Time.time) % 10 == 0)
         {
             QueueBlock(new Vector2Int(6, 1));
         }
@@ -137,16 +141,43 @@ public class PuzzleGrid : MonoBehaviour
             }
         }
 
-        // Scroll Grid - Lock scroll if there are clearing or falling tiles
-        if (UnlockedTiles.Count == 0 && ClearingTiles.Count == 0)
+        // Scroll Grid - Lock scroll if there are clearing or falling tiles that are not blocks
+        if (ClearingTiles.Count == 0)
         {
 
-            // If the scroll button is pressed while scrolling is legal, lock in the boost scroll speed until another row of tiles is created.
-            if (ScrollBoostInput) ScrollBoostLock = true;
+            // Check if there is a non-block falling
+            bool NonblockFalling = false;
+            foreach (int _TileID in UnlockedTiles)
+            {
+                Griddable _Tile = GetTileByID(_TileID);
+                if(_Tile.Type != Griddable.TileType.Block)
+                {
+                    NonblockFalling = true;
+                    break;
+                }
+            }
 
-            float ScrollAmount = ScrollSpeed * Time.fixedDeltaTime;
-            if (ScrollBoostLock) ScrollAmount *= SCROLL_BOOST_FACTOR;
-            if (!RowContainsLockedTiles(CEILING_ROW)) Scroll(ScrollAmount);
+            if (!NonblockFalling)
+            {
+                
+                if (RowContainsLockedTiles(CEILING_ROW))
+                {
+
+                    // If scrolling is otherwise legal but the ceiling row is reached, take damage.
+                    TakeDamage(Time.fixedDeltaTime);
+
+                }
+                else
+                {
+
+                    // If the scroll button is pressed while scrolling is legal, lock in the boost scroll speed until another row of tiles is created.
+                    if (ScrollBoostInput) ScrollBoostLock = true;
+                    float ScrollAmount = ScrollSpeed * Time.fixedDeltaTime;
+                    if (ScrollBoostLock) ScrollAmount *= SCROLL_BOOST_FACTOR;
+                    Scroll(ScrollAmount);
+
+                }
+            }
 
         }
 
@@ -200,6 +231,15 @@ public class PuzzleGrid : MonoBehaviour
             }
         }
 
+    }
+
+    private void TakeDamage(float _DamageAmount)
+    {
+        Health -= _DamageAmount;
+        if(Health < 0)
+        {
+            Destroy(gameObject);
+        }
     }
 
     /// <summary>
@@ -859,7 +899,22 @@ public class PuzzleGrid : MonoBehaviour
         {
             for (int j = 0; j < _BlockSize.y; j++)
             {
-                int _KeyID = CreateNewBlockTile(_Block, _GridPosition + new Vector2(i, j), false);
+
+                BlockTile.BlockSection _BlockSection;
+                if(i == 0)
+                {
+                    _BlockSection = BlockTile.BlockSection.SingleLeft;
+                } 
+                else if (i == _BlockSize.y - 1)
+                {
+                    _BlockSection = BlockTile.BlockSection.SingleRight;
+                }
+                else
+                {
+                    _BlockSection = BlockTile.BlockSection.SingleCenter;
+                }
+
+                int _KeyID = CreateNewBlockTile(_Block, _GridPosition + new Vector2(i, j), false, _BlockSection);
                 BlockTile _BlockTile = (BlockTile) GetTileByID(_KeyID);
                 if (_BlockTile == null) Debug.LogError("Recently created block not found or cast correctly.");
                 _Block.AddBlockTile(_BlockTile);
@@ -869,9 +924,9 @@ public class PuzzleGrid : MonoBehaviour
         return NextBlockID++;
     }
 
-    int CreateNewBlockTile(Block _Block, Vector2 _GridPosition, bool _LockedToGrid)
+    int CreateNewBlockTile(Block _Block, Vector2 _GridPosition, bool _LockedToGrid, BlockTile.BlockSection _BlockSection)
     {
-        Tiles.Add(NextTileID, new BlockTile(this, NextTileID, _GridPosition, _LockedToGrid, _Block));
+        Tiles.Add(NextTileID, new BlockTile(this, NextTileID, _GridPosition, _LockedToGrid, _Block, _BlockSection));
         if (!_LockedToGrid) UnlockedTiles.Add(NextTileID);
         return NextTileID++;
     }

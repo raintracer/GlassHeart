@@ -14,19 +14,43 @@ public class BlockTile : Griddable
     override public TileType Type { get; protected set; } = TileType.Block;
     override public bool Swappable { get; protected set; } = false;
 
+    public enum BlockSection { SingleLeft, SingleCenter, SingleRight }
+    private BlockSection Section;
+
     public Block MyBlock;
 
 
-    public BlockTile(PuzzleGrid Grid, int _Key, Vector2 _GridPos, bool _LockedToGrid, Block _MyBlock) : base(Grid, _Key, _GridPos, _LockedToGrid)
+    public BlockTile(PuzzleGrid Grid, int _Key, Vector2 _GridPos, bool _LockedToGrid, Block _MyBlock, BlockSection _BlockSection) : base(Grid, _Key, _GridPos, _LockedToGrid)
     {
         MyBlock = _MyBlock;
+        Section = _BlockSection;
         UpdateSprite();
     }
 
     protected override void UpdateSprite()
     {
-        SR_Background.sprite = GameAssets.Sprite.BlockTile;
+
+        Sprite BlockSprite = null;
+
+        switch (Section)
+        {
+            case BlockSection.SingleLeft:
+                BlockSprite = GameAssets.Sprite.BlockTileSingleLeft;
+                break;
+            case BlockSection.SingleCenter:
+                BlockSprite = GameAssets.Sprite.BlockTileSingleCenter;
+                break;
+            case BlockSection.SingleRight:
+                BlockSprite = GameAssets.Sprite.BlockTileSingleRight;
+                break;
+            default:
+                Debug.LogError("Unknown block sprite requested.");
+                break;
+        }
+
+        SR_Background.sprite = BlockSprite;
         SR_Icon.sprite = null;
+
     }
 
     override protected void OnAttach()
@@ -78,6 +102,7 @@ public class BlockTile : Griddable
         BasicTile.TileColor _TileColor = GameAssets.GetRandomTileColor();
         SR_Background.sprite = GameAssets.GetBackgroundSpriteByTileColor(_TileColor);
         SR_Icon.sprite = GameAssets.GetIconSpriteByTileColor(_TileColor);
+        SR_Background.material = GameAssets.Material.Default;
         GameAssets.Sound.DefaultBust.Play();
         ParticleController Particles = GameObject.Instantiate(Resources.Load<GameObject>("ParticleController")).GetComponent<ParticleController>();
         Particles.StartParticle("TilePop", GO.transform.position + new Vector3(0.5f, 0.5f, 0f), 0.5f);
