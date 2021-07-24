@@ -38,12 +38,62 @@ public class BlockTile : Griddable
         }
 
     }
+    override public bool FallAllowed()
+    {
 
-    //IMPLEMENT
-    //override public bool FallAllowed()
-    //{
-    //    return (state == State.Set);
-    //}
+        // Tile must be set to fall
+        if (state != State.Set) return false;
 
+        // Ask the block to check if all tiles can fall. If so, have it issue the fall command.
+        return MyBlock.CheckForFallCondition(); 
+
+    }
+
+    override protected void RequestDestruction(bool _Chain)
+    {
+        state = State.Dying;
+        MyBlock.RequestDestruction(this); 
+        ParentGrid.DestroyRequest(this, _Chain);
+    }
+
+    override protected IEnumerator AnimateClear(int ClearOrder, int ClearTotal) // ClearOrder is the position of this tile in a clear set (zero-indexed), ClearTotal is the total number of tiles in the clear set
+    {
+
+        SR_Background.material = GameAssets.Material.ClearingFlash;
+
+        // Flash for a set time
+        for (int i = 0; i < CLEAR_FLASH_FRAMES; i++)
+        {
+            yield return new WaitForFixedUpdate();
+        }
+
+        // Wait To Bust
+        SR_Background.material = GameAssets.Material.WaitingToBust;
+        for (int i = 0; i < (ClearOrder + 1) * CLEAR_BUST_DELAY_FRAMES; i++)
+        {
+            yield return new WaitForFixedUpdate();
+        }
+
+        // Bust
+        BasicTile.TileColor _TileColor = GameAssets.GetRandomTileColor();
+        SR_Background.sprite = GameAssets.GetBackgroundSpriteByTileColor(_TileColor);
+        SR_Icon.sprite = GameAssets.GetIconSpriteByTileColor(_TileColor);
+        GameAssets.Sound.DefaultBust.Play();
+        ParticleController Particles = GameObject.Instantiate(Resources.Load<GameObject>("ParticleController")).GetComponent<ParticleController>();
+        Particles.StartParticle("TilePop", GO.transform.position + new Vector3(0.5f, 0.5f, 0f), 0.5f);
+
+        // Wait for others in the clear set to all bust
+        for (int i = 0; i < (ClearTotal - ClearOrder) * CLEAR_BUST_DELAY_FRAMES; i++)
+        {
+            yield return new WaitForFixedUpdate();
+        }
+
+        // Request Destruction
+        RequestDestruction(true);
+
+        // Request replacement
+        ParentGrid.RequestTileReplacement(_TileColor, GridCoordinate, ChainLevel);
+
+    }
 
 }

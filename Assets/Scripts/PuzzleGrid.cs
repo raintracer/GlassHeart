@@ -16,8 +16,8 @@ public class PuzzleGrid : MonoBehaviour
     float ScrollSpeed = 0.1f;
     
     // These collections hold integer keys that correspond with the Dictionary of Griddables
-    private int[,] TileGrid;
-    private Vector2Int GridSize = new Vector2Int(6, 15);
+    public int[,] TileGrid;
+    public Vector2Int GridSize = new Vector2Int(6, 15);
     private List<int> UnlockedTiles;
 
     // This collection holds the block entities
@@ -52,7 +52,7 @@ public class PuzzleGrid : MonoBehaviour
     private const float SCROLL_BOOST_FACTOR = 20f;
     private const int FAST_SCROLL_FRAMES = 10;
     private const int DANGER_ROW = 11;
-    private const int BLOCK_SPAWN_ROW = 15;
+    private const int BLOCK_SPAWN_ROW = 14;
 
     // These properties affect the rendering of Griddables
 
@@ -255,15 +255,27 @@ public class PuzzleGrid : MonoBehaviour
                 
             }
 
-            if (GridRequests[i].Type == GridRequestType.Destroy)
+            if (GridRequests[i].Type == GridRequestType.ReplaceWithTile)
             {
 
-                Vector2Int TileCoordinate = GridRequests[i].Coordinate;
-                int TileID = TileGrid[TileCoordinate.x, TileCoordinate.y];
-                GridRequests.Add(new GridRequest { Type = GridRequestType.Update, Coordinate = TileCoordinate, ChainLevel = GridRequests[i].ChainLevel });
-                UnattachTileFromGrid(TileCoordinate);
+                // Place new tile in its position
+                Vector2Int _TileCoordinate = GridRequests[i].Coordinate;
+                int TileID = CreateNewBasicTile(GridRequests[i].TileColor, _TileCoordinate, true);
+                Griddable _Tile = GetTileByID(TileID);
+                AttachTileToGrid(_Tile, _TileCoordinate);
+
+                // Update tile
+                GridRequests.Add(new GridRequest { Type = GridRequestType.Update, Coordinate = _TileCoordinate, ChainLevel = GridRequests[i].ChainLevel });
+
+            }
+
+            if (GridRequests[i].Type == GridRequestType.Destroy)
+            {
+                Vector2Int _TileCoordinate = GridRequests[i].Coordinate;
+                int TileID = GetTileKeyAtGridCoordinate(_TileCoordinate);
+                GridRequests.Add(new GridRequest { Type = GridRequestType.Update, Coordinate = _TileCoordinate, ChainLevel = GridRequests[i].ChainLevel });
+                UnattachTileFromGrid(_TileCoordinate);
                 DestroyUnlockedTile(GetTileByID(TileID));
-                
             }
 
             if (GridRequests[i].Type == GridRequestType.Update)
@@ -648,7 +660,8 @@ public class PuzzleGrid : MonoBehaviour
     void UnattachTileFromGrid(Vector2Int _GridCoordinate)
     {
 
-        int TileID = TileGrid[_GridCoordinate.x, _GridCoordinate.y];
+        
+        int TileID = GetTileKeyAtGridCoordinate(_GridCoordinate);
         UpdateTileAtGridCoordinate(_GridCoordinate.x, _GridCoordinate.y);
 
         // Make sure the grid position is not empty (Value 0)
@@ -657,7 +670,7 @@ public class PuzzleGrid : MonoBehaviour
         // Add Tile key to Unlocked Tile List
         UnlockedTiles.Add(TileID);
 
-        // Remove Tile to Grid
+        // Remove Tile from Grid
         TileGrid[_GridCoordinate.x, _GridCoordinate.y] = 0;
 
         // Notice to Tile of Unattachment
@@ -702,6 +715,13 @@ public class PuzzleGrid : MonoBehaviour
 
     public int GetTileKeyAtGridCoordinate(Vector2Int _GridCoordinate)
     {
+
+        // Check for out of bounds request
+        if (_GridCoordinate.x < 0 || _GridCoordinate.x >= GridSize.x || _GridCoordinate.y < 0 || _GridCoordinate.y >= GridSize.y)
+        {
+            Debug.LogError("Tile Key requested for invalid coordinate: " + _GridCoordinate);
+        }
+
         return TileGrid[_GridCoordinate.x, _GridCoordinate.y];
     }
 
@@ -713,7 +733,7 @@ public class PuzzleGrid : MonoBehaviour
             Debug.LogWarning("An already-locked tile requested attachment:" + _Tile.GridCoordinate );
         }
 
-        if (TileGrid[_GridCoordinate.x, _GridCoordinate.y] != 0)
+        if (GetTileKeyAtGridCoordinate(_GridCoordinate) != 0)
         {
             Debug.LogWarning("Tile requested attachment to an occupied grid-space.");
             return false;
@@ -743,7 +763,7 @@ public class PuzzleGrid : MonoBehaviour
 
     private bool CoordinateContainsLockedTile(Vector2Int _GridCoordinate)
     {
-        return (TileGrid[_GridCoordinate.x, _GridCoordinate.y] != 0);
+        return (GetTileKeyAtGridCoordinate(_GridCoordinate) != 0);
     }
 
     private bool CoordinateContainsFreeTile(Vector2Int _GridCoordinate)
@@ -813,7 +833,7 @@ public class PuzzleGrid : MonoBehaviour
         bool SpawnRowIsClear = true;
         for(int i = 0; i < GridSize.x; i++)
         {
-            if (CoordinateContainsFreeTile(new Vector2Int(i, BLOCK_SPAWN_ROW))) {
+            if (CoordinateContainsFreeTile(new Vector2Int(i, BLOCK_SPAWN_ROW)) || CoordinateContainsLockedTile(new Vector2Int(i, BLOCK_SPAWN_ROW))) {
                 SpawnRowIsClear = false;
                 break;
             }
@@ -854,6 +874,23 @@ public class PuzzleGrid : MonoBehaviour
         Tiles.Add(NextTileID, new BlockTile(this, NextTileID, _GridPosition, _LockedToGrid, _Block));
         if (!_LockedToGrid) UnlockedTiles.Add(NextTileID);
         return NextTileID++;
+    }
+
+    public void RemoveBlockByID(int _BlockID)
+    {
+        Blocks.Remove(_BlockID);
+    }
+
+    public void RequestTileReplacement(BasicTile.TileColor _TileColor, Vector2Int _Coordinate, int _ChainLevel)
+    {
+        GridRequests.Add(
+                new GridRequest { 
+                    Type = GridRequestType.ReplaceWithTile, 
+                    Coordinate = _Coordinate, 
+                    ChainLevel = _ChainLevel, 
+                    TileColor = _TileColor 
+                } 
+            );
     }
 
     #endregion

@@ -29,9 +29,9 @@ public abstract class Griddable
 
     // Constant or Read-Only Fields
     protected const float FALL_SPEED = 0.4F;
-    readonly static int SWAP_FRAMES = 4;
-    readonly static int CLEAR_FLASH_FRAMES = 40;
-    readonly static int CLEAR_BUST_DELAY_FRAMES = 10;
+    protected readonly static int SWAP_FRAMES = 4;
+    protected readonly static int CLEAR_FLASH_FRAMES = 40;
+    protected readonly static int CLEAR_BUST_DELAY_FRAMES = 10;
 
     // State Fields
     protected enum State { Free, Set, Swapping, Clearing, Dying, Special }
@@ -75,6 +75,11 @@ public abstract class Griddable
         UpdateObjectPosition();
     }
 
+    public bool IsSet()
+    {
+        return (state == Griddable.State.Set);
+    }
+
     protected void UpdateObjectPosition() {
         GO.transform.position = ParentGrid.GridWorldPosition + GridPosition + new Vector2(0, ParentGrid.GridScrollOffset);
     }
@@ -100,7 +105,7 @@ public abstract class Griddable
 
     #region Parent Grid Requests
 
-    protected void RequestDestruction(bool _Chain)
+    virtual protected void RequestDestruction(bool _Chain)
     {
         state = State.Dying;
         ParentGrid.DestroyRequest(this, _Chain);
@@ -313,7 +318,7 @@ public abstract class Griddable
         ChangeAnimation(Animation.None);
     }
 
-    private IEnumerator AnimateClear(int ClearOrder, int ClearTotal) // ClearOrder is the position of this tile in a clear set (zero-indexed), ClearTotal is the total number of tiles in the clear set
+    virtual protected IEnumerator AnimateClear(int ClearOrder, int ClearTotal) // ClearOrder is the position of this tile in a clear set (zero-indexed), ClearTotal is the total number of tiles in the clear set
     {
 
         SR_Background.material = GameAssets.Material.ClearingFlash;
@@ -349,6 +354,7 @@ public abstract class Griddable
         RequestDestruction(true);
 
     }
+
     private IEnumerator AnimateBounce()
     {
         SR_Icon.material = GameAssets.Material.TileBounce;
