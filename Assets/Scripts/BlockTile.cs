@@ -40,9 +40,10 @@ public class BlockTile : Griddable
     }
 
     //IMPLEMENT
-    override public bool FallAllowed()
-    {
-        return (state == State.Set);
-    }
+    //override public bool FallAllowed()
+    //{
+    //    return (state == State.Set);
+    //}
+
 
 }

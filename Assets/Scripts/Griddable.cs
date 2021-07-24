@@ -130,7 +130,7 @@ public abstract class Griddable
         GameObject.Destroy(GO);
     }
 
-    public void Clear(int ClearOrder, int ClearTotal)
+    virtual public void Clear(int ClearOrder, int ClearTotal)
     {
         state = State.Clearing;
         ChangeAnimation(Animation.Clear, IntCommand1: ClearOrder, IntCommand2: ClearTotal);
@@ -189,11 +189,13 @@ public abstract class Griddable
     public void Unattach()
     {
         state = State.Free;
+        LockedToGrid = false;
     }
 
     public void Attach(Vector2Int _TileCoordinate)
     {
         state = State.Set;
+        LockedToGrid = true;
         GridCoordinate = _TileCoordinate;
 
         // Play landing animation

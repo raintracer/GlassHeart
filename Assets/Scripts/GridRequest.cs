@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum GridRequestType { Update, Clear, Destroy };
+public enum GridRequestType { Update, Clear, BlockClear, Destroy };
 
 public struct GridRequest
 {

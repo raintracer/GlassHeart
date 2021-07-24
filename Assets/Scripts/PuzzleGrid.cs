@@ -33,7 +33,7 @@ public class PuzzleGrid : MonoBehaviour
     private int ChainLevel = 0;
 
     // This collection holds asynchronous update requests to process
-    private List<GridRequest> GridRequests;
+    public List<GridRequest> GridRequests;
 
     // Input-related declarations
     private ControlMap Inputs;
@@ -102,7 +102,7 @@ public class PuzzleGrid : MonoBehaviour
     {
 
         // Spawn blocks for testing
-        if ((Time.time - 9) % 10 == 0)
+        if ((Time.time) % 3 == 0)
         {
             QueueBlock(new Vector2Int(6, 1));
         }
@@ -127,11 +127,13 @@ public class PuzzleGrid : MonoBehaviour
         if (UnlockedTiles.Count != 0)
         {
             // Sort FreeTiles by grid y position in ascending order
-            UnlockedTiles.Sort(CompareFreeTileHeightAscending);
-            for (int i = UnlockedTiles.Count - 1; i >= 0; i--)
+            List<int> _UnlockedTileTemp = new List<int>(UnlockedTiles);
+            _UnlockedTileTemp.Sort(CompareFreeTileHeightAscending);
+            for (int i = _UnlockedTileTemp.Count - 1; i >= 0; i--)
             {
-                int TileKey = UnlockedTiles[i];
-                GetTileByID(TileKey).FreeFall();
+                int TileKey = _UnlockedTileTemp[i];
+                Griddable _Tile = GetTileByID(TileKey);
+                if (!_Tile.LockedToGrid) _Tile.FreeFall();
             }
         }
 
@@ -216,6 +218,42 @@ public class PuzzleGrid : MonoBehaviour
 
         for (int i = 0; i < GridRequests.Count; i++)
         {
+
+
+            // Created on a coordinate that a basic tile clears
+            if (GridRequests[i].Type == GridRequestType.BlockClear)
+            {
+
+                Vector2Int TileCoordinate = GridRequests[i].Coordinate;
+                Vector2Int[] _CheckOffsets = { Vector2Int.left, Vector2Int.right, Vector2Int.up, Vector2Int.down };
+
+                foreach (Vector2Int _CheckOffset in _CheckOffsets)
+                {
+                    
+                    Vector2Int _CheckCoordinate = TileCoordinate + _CheckOffset;
+                    if (_CheckCoordinate.x < 0 || _CheckCoordinate.x >= GridSize.x || _CheckCoordinate.y < 0 || _CheckCoordinate.y >= GridSize.y) continue;
+                    
+                    int TileID = TileGrid[_CheckCoordinate.x, _CheckCoordinate.y];
+                    if (TileID == 0) continue;
+
+                    Griddable _Tile = GetTileByID(TileID);
+                    if (_Tile.Type == Griddable.TileType.Block)
+                    {
+                        
+                        BlockTile _BlockTile = _Tile as BlockTile;
+                        Block _Block = _BlockTile.MyBlock;
+                        if (_Block.State == Block.BlockState.Set)
+                        {
+
+                            _Block.Clear();
+
+                        }
+                        
+                    }
+
+                }
+                
+            }
 
             if (GridRequests[i].Type == GridRequestType.Destroy)
             {
@@ -375,6 +413,7 @@ public class PuzzleGrid : MonoBehaviour
                 Griddable _Tile = GetTileByGridCoordinate(_TileCoordinate);
                 if (_Tile.ChainLevel > HighestChain) HighestChain = _Tile.ChainLevel;
                 _Tile.Clear(i, ListCount);
+                GridRequests.Add(new GridRequest { Type = GridRequestType.BlockClear, Coordinate = _TileCoordinate });
                 ClearingTiles.Add(_Tile.KeyID);
             }
 
@@ -556,7 +595,7 @@ public class PuzzleGrid : MonoBehaviour
         // CREATE STARTING LOCKED TILES
         for (int i = 0; i < GridSize.x; i++)
         {
-            for (int j = 0; j < i*2 + 2; j++)
+            for (int j = 0; j < 3; j++)
             {
                 AttachTileToGrid(GetTileByID(CreateNewBasicTile(GameAssets.GetRandomTileColor(), new Vector2(i,j), true)), new Vector2Int(i, j));
             }
@@ -584,6 +623,12 @@ public class PuzzleGrid : MonoBehaviour
         
         // Remove Tile key from Unlocked Tile List
         UnlockedTiles.Remove(_Tile.KeyID);
+
+        // Make sure the TileGrid position is valid
+        if (_GridCoordinate.x < 0 || _GridCoordinate.x >= GridSize.x || _GridCoordinate.y < 0 || _GridCoordinate.y >= GridSize.y)
+        {
+            Debug.LogError("Attempted to attach Tile out-of-bounds: " + _GridCoordinate);
+        }
 
         // Make sure the TileGrid position is available (Value 0)
         if (TileGrid[_GridCoordinate.x, _GridCoordinate.y] != 0)
@@ -662,10 +707,14 @@ public class PuzzleGrid : MonoBehaviour
 
     public bool RequestAttachment(Griddable _Tile, Vector2Int _GridCoordinate)
     {
-        
+
+        if (_Tile.LockedToGrid)
+        {
+            Debug.LogWarning("An already-locked tile requested attachment:" + _Tile.GridCoordinate );
+        }
+
         if (TileGrid[_GridCoordinate.x, _GridCoordinate.y] != 0)
         {
-            Debug.Break();
             Debug.LogWarning("Tile requested attachment to an occupied grid-space.");
             return false;
         }
@@ -782,7 +831,7 @@ public class PuzzleGrid : MonoBehaviour
 
     private int SpawnBlock(Vector2 _GridPosition, Vector2Int _BlockSize)
     {
-        Block _Block = new Block(NextBlockID, _BlockSize, _GridPosition);
+        Block _Block = new Block(this, NextBlockID, _BlockSize, _GridPosition);
         Blocks.Add(NextBlockID, _Block);
 
         // Create BlockTiles
@@ -790,9 +839,8 @@ public class PuzzleGrid : MonoBehaviour
         {
             for (int j = 0; j < _BlockSize.y; j++)
             {
-                int KeyID = NextTileID; 
-                CreateNewBlockTile(_Block, _GridPosition + new Vector2(i, j), false);
-                BlockTile _BlockTile = (BlockTile) GetTileByID(KeyID);
+                int _KeyID = CreateNewBlockTile(_Block, _GridPosition + new Vector2(i, j), false);
+                BlockTile _BlockTile = (BlockTile) GetTileByID(_KeyID);
                 if (_BlockTile == null) Debug.LogError("Recently created block not found or cast correctly.");
                 _Block.AddBlockTile(_BlockTile);
             }
