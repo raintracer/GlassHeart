@@ -19,7 +19,7 @@ public abstract class Griddable
     readonly public PuzzleGrid ParentGrid;
 
     // Type Fields
-    public enum TileType { Basic, SwapTemp, Block }
+    public enum TileType { Basic, SwapTemp, Block, HangtimeEthereal }
     public abstract TileType Type { get; protected set; }
     
     // Grid Fields

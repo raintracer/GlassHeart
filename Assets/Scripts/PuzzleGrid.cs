@@ -311,11 +311,17 @@ public class PuzzleGrid : MonoBehaviour
 
             if (GridRequests[i].Type == GridRequestType.Destroy)
             {
+                
                 Vector2Int _TileCoordinate = GridRequests[i].Coordinate;
                 int TileID = GetTileKeyAtGridCoordinate(_TileCoordinate);
+                Griddable.TileType _TileType = GetTileByID(TileID).Type;
                 GridRequests.Add(new GridRequest { Type = GridRequestType.Update, Coordinate = _TileCoordinate, ChainLevel = GridRequests[i].ChainLevel });
                 UnattachTileFromGrid(_TileCoordinate);
                 DestroyUnlockedTile(GetTileByID(TileID));
+
+                //Replace basic tiles with a hangtime ethereal tile
+                if (_TileType == Griddable.TileType.Basic) AttachTileToGrid(GetTileByID(CreateNewHangtimeEtherialTile(_TileCoordinate)), _TileCoordinate);
+
             }
 
             if (GridRequests[i].Type == GridRequestType.Update)
@@ -575,6 +581,23 @@ public class PuzzleGrid : MonoBehaviour
         if (TileB != null && !TileB.SwappingAllowed()) return;
         if (TileA == null && TileB == null) return;
 
+        // REPLACE ANY HANGTIME ETHEREAL TILES
+        if (TileA != null && TileA.Type == Griddable.TileType.HangtimeEthereal)
+        {
+            Vector2Int _TileCoordinate = TileA.GridCoordinate;
+            UnattachTileFromGrid(_TileCoordinate);
+            DestroyUnlockedTile(TileA);
+            TileA = null;
+        }
+
+        if (TileB != null && TileB.Type == Griddable.TileType.HangtimeEthereal)
+        {
+            Vector2Int _TileCoordinate = TileB.GridCoordinate;
+            UnattachTileFromGrid(_TileCoordinate);
+            DestroyUnlockedTile(TileB);
+            TileB = null;
+        }
+
         // GENERATE SWAPTEMP TILES IN PLACE OF NULLS
         if (TileA == null)
         {
@@ -667,6 +690,13 @@ public class PuzzleGrid : MonoBehaviour
     {
         int TileID = NextTileID;
         Tiles.Add(NextTileID++, new SwapTempTile(this, TileID, _GridPosition));
+        return TileID;
+    }
+
+    int CreateNewHangtimeEtherialTile(Vector2 _GridPosition)
+    {
+        int TileID = NextTileID;
+        Tiles.Add(NextTileID++, new HangtimeEtherealTile(this, TileID, _GridPosition));
         return TileID;
     }
 
