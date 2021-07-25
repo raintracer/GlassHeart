@@ -108,7 +108,7 @@ public class PuzzleGrid : MonoBehaviour
         // Spawn blocks for testing
         if ((Time.time) % 10 == 0)
         {
-            QueueBlock(new Vector2Int(6, 1));
+            QueueBlock(new Vector2Int(3, 1));
         }
 
         // Check the block queue for a valid spawn
@@ -905,7 +905,7 @@ public class PuzzleGrid : MonoBehaviour
                 {
                     _BlockSection = BlockTile.BlockSection.SingleLeft;
                 } 
-                else if (i == _BlockSize.y - 1)
+                else if (i == _BlockSize.x - 1)
                 {
                     _BlockSection = BlockTile.BlockSection.SingleRight;
                 }

@@ -80,7 +80,8 @@ static public class GameAssets
             ["TileGreenIcon"] = Resources.Load<UnityEngine.Sprite>("Tile-Green-Icon"),
             ["BlockTileSingleLeft"] = Resources.Load<UnityEngine.Sprite>("BlockTileSingleLeft"),
             ["BlockTileSingleCenter"] = Resources.Load<UnityEngine.Sprite>("BlockTileSingleCenter"),
-            ["BlockTileSingleRight"] = Resources.Load<UnityEngine.Sprite>("BlockTileSingleRight")
+            ["BlockTileSingleRight"] = Resources.Load<UnityEngine.Sprite>("BlockTileSingleRight"),
+            ["BlockTileSingle"] = Resources.Load<UnityEngine.Sprite>("BlockTileSingle")
         };
     }
 
@@ -108,6 +109,7 @@ static public class GameAssets
         public static UnityEngine.Sprite BlockTileSingleLeft { get => GetSprite("BlockTileSingleLeft"); }
         public static UnityEngine.Sprite BlockTileSingleCenter { get => GetSprite("BlockTileSingleCenter"); }
         public static UnityEngine.Sprite BlockTileSingleRight { get => GetSprite("BlockTileSingleRight"); }
+        public static UnityEngine.Sprite BlockTileSingle { get => GetSprite("BlockTileSingle"); }
     }
 
     #endregion
