@@ -8,7 +8,7 @@ public struct GridRequest
 {
     public GridRequestType Type;
     public Vector2Int Coordinate;
-    public int ChainLevel;
+    public bool Chaining;
     public BasicTile.TileColor TileColor;
 
     public void ShiftReference(int Positions)

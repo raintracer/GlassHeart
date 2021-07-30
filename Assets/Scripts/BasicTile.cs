@@ -14,10 +14,10 @@ public class BasicTile : Griddable
     public BasicTile(PuzzleGrid Grid, int _Key, TileColor _Color, Vector2 _GridPos, bool _LockedToGrid) : base(Grid, _Key, _GridPos, _LockedToGrid)
     {
         Color = _Color;
-        UpdateSprite();
+        InitializeSprite();
     }
 
-    protected override void UpdateSprite()
+    protected override void InitializeSprite()
     {
         SR_Background.sprite = GameAssets.GetBackgroundSpriteByTileColor(Color);
         SR_Icon.sprite = GameAssets.GetIconSpriteByTileColor(Color);

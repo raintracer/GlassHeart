@@ -17,6 +17,7 @@ public abstract class Griddable
     protected SpriteRenderer SR_Icon;
     readonly protected Mono mono;
     readonly public PuzzleGrid ParentGrid;
+    protected TextMeshPro DebugTextMesh;
 
     // Type Fields
     public enum TileType { Basic, SwapTemp, Block, HangtimeEthereal }
@@ -28,7 +29,7 @@ public abstract class Griddable
     public int KeyID { get; private set; }
 
     // Constant or Read-Only Fields
-    protected const float FALL_SPEED = 0.4F;
+    protected const float FALL_SPEED = 0.04F;
     protected readonly static int SWAP_FRAMES = 4;
     protected readonly static int CLEAR_FLASH_FRAMES = 40;
     protected readonly static int CLEAR_BUST_DELAY_FRAMES = 10;
@@ -42,7 +43,7 @@ public abstract class Griddable
     Coroutine AnimationRoutine = null;
     Animation CurentAnimation = Animation.None;
     public bool LockedToGrid { get; private set; }
-    public int ChainLevel { get; set; } = 0;
+    private bool Chaining = false;
 
     // Permission Fields
     public abstract bool Swappable { get; protected set; }
@@ -51,44 +52,52 @@ public abstract class Griddable
     protected Griddable(PuzzleGrid newParentGrid, int newKeyID, Vector2 newGridPosition, bool newLockedToGrid)
     {
 
+        // Initialize parameters
         ParentGrid = newParentGrid;
         GridPosition = newGridPosition;
         LockedToGrid = newLockedToGrid;
         KeyID = newKeyID;
 
+        // Initialize component handles
         GO = Object.Instantiate<GameObject>(Resources.Load<GameObject>("BasicTile"), ParentGrid.transform);
         mono = GO.AddComponent<Mono>(); 
-        GO.transform.position = ParentGrid.GridWorldPosition + GridPosition;
-
+        DebugTextMesh = GO.transform.Find("DebugText").GetComponent<TextMeshPro>();
         SR_Background = GO.transform.Find("TileBackground").GetComponent<SpriteRenderer>();
         SR_Icon = GO.transform.Find("TileIcon").GetComponent<SpriteRenderer>();
 
+        // Initialize State
         state = LockedToGrid ? State.Set : State.Free;
 
     }
 
-    protected virtual void UpdateSprite() { }
+    /// <summary>
+    /// Allows Griddable-derived classes to define how to set their default sprites.
+    /// </summary>
+    protected virtual void InitializeSprite() { }
 
+
+
+
+
+    #region Public Field Accessors and Setters
+
+    /// <summary>
+    /// Sets the tile's position relative to the grid space.
+    /// </summary>
     public void SetGridPosition(Vector2 newGridPosition)
     {
         GridPosition = newGridPosition;
         UpdateObjectPosition();
     }
 
-    public bool IsSet()
-    {
-        return (state == Griddable.State.Set);
-    }
-
-    protected void UpdateObjectPosition() {
-        GO.transform.position = ParentGrid.GridWorldPosition + GridPosition + new Vector2(0, ParentGrid.GridScrollOffset);
-    }
-
-    #region Public Field Accessors
-
     public Vector3 GetWorldPosition()
     {
         return GO.transform.position;
+    }
+
+    public bool IsSet()
+    {
+        return (state == Griddable.State.Set);
     }
 
     public bool IsClearing()
@@ -99,6 +108,26 @@ public abstract class Griddable
     public bool IsSwapping()
     {
         return (state == State.Swapping);
+    }
+
+    public void SetChaining(bool _Chaining)
+    {
+
+        Chaining = _Chaining;
+        if (Chaining)
+        {
+            DebugTextMesh.text = 1.ToString();
+        }
+        else
+        {
+            DebugTextMesh.text = 0.ToString();
+        }
+        
+    }
+
+    public bool GetChaining()
+    {
+        return Chaining;
     }
 
     #endregion
@@ -114,16 +143,6 @@ public abstract class Griddable
     #endregion
 
     #region Parent Grid Commands
-
-    public void SetChain(int _ChainLevel)
-    {
-        ChainLevel = _ChainLevel;
-    }
-
-    public void ResetChainLevel()
-    {
-        SetChain(0);
-    }
 
     public void ChangeAttachmentCoordinate(Vector2Int _TileCoordinate)
     {
@@ -143,7 +162,6 @@ public abstract class Griddable
 
     public void ShiftPosition(float _ShiftAmount)
     {
-        //if (LockedToGrid) Debug.LogError("Tried to shift a locked Griddable. Unlock first.");
         GridPosition += new Vector2(0, _ShiftAmount);
         UpdateObjectPosition();
     }
@@ -210,6 +228,9 @@ public abstract class Griddable
 
     }
 
+    /// <summary>
+    /// Allows Griddable-derived classes to define custom behavior after the tile is attached.
+    /// </summary>
     virtual protected void OnAttach() { }
 
     #endregion
@@ -233,8 +254,19 @@ public abstract class Griddable
 
     #endregion
 
-    #region Animations
+    #region Animation and GameObject
 
+    /// <summary>
+    /// Moves the GameObject the appropriate world space based on its grid space, the grid's world position, and the grid scroll offset.
+    /// </summary>
+    protected void UpdateObjectPosition()
+    {
+        GO.transform.position = ParentGrid.GridWorldPosition + GridPosition + new Vector2(0, ParentGrid.GridScrollOffset);
+    }
+
+    /// <summary>
+    /// Executes the specified animation. Check for permission before calling this method; it does not do any sanity checking. Note that a coroutine will be invoked that will make game changes.
+    /// </summary>
     public void ChangeAnimation(Animation _Animation, bool BoolCommand = false, int IntCommand1 = 0, int IntCommand2 = 0)
     {
 
@@ -283,6 +315,7 @@ public abstract class Griddable
         ChangeAnimation(Animation.None);
     }
 
+    /// <param name="SwapRight">True if the tile is moving right. False if the tile is moving left.</param>
     private IEnumerator AnimateSwap(bool SwapRight)
     {
 
@@ -318,9 +351,14 @@ public abstract class Griddable
         ChangeAnimation(Animation.None);
     }
 
-    virtual protected IEnumerator AnimateClear(int ClearOrder, int ClearTotal) // ClearOrder is the position of this tile in a clear set (zero-indexed), ClearTotal is the total number of tiles in the clear set
+
+    /// <param name="ClearOrder">The position of the tile in the clear set. (zero-indexed)</param>
+    /// <param name="ClearTotal">The total number of the tiles in the clear set.</param>
+    /// <returns></returns>
+    virtual protected IEnumerator AnimateClear(int ClearOrder, int ClearTotal)
     {
 
+        // Change material to clearing flash
         SR_Background.material = GameAssets.Material.ClearingFlash;
 
         // Flash for a set time
@@ -341,6 +379,7 @@ public abstract class Griddable
         SR_Icon.sprite = null;
         GameAssets.Sound.DefaultBust.Play();
 
+        // Emit a bust particle
         ParticleController Particles = GameObject.Instantiate(Resources.Load<GameObject>("ParticleController")).GetComponent<ParticleController>();
         Particles.StartParticle("TilePop", GO.transform.position + new Vector3(0.5f, 0.5f, 0f), 0.5f);
 

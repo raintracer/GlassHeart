@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using TMPro;
 
 /// <summary>
 /// The main player object. Handles inputs and all activity within the player grid-space.
@@ -10,30 +11,28 @@ public class PuzzleGrid : MonoBehaviour
 {
 
     // This collection holds all Griddable objects on the Grid
-    private Dictionary<int, Griddable> Tiles;
+    private Dictionary<int, Griddable> Tiles = new Dictionary<int, Griddable>();
+    public Vector2Int GridSize = new Vector2Int(6, 15);
     private int NextTileID = 1;
     private int NextBlockID = 1;
-    float ScrollSpeed = 0.1f;
-    
+
     // These collections hold integer keys that correspond with the Dictionary of Griddables
     public int[,] TileGrid;
-    public Vector2Int GridSize = new Vector2Int(6, 15);
-    private List<int> UnlockedTiles;
+    private List<int> UnlockedTiles = new List<int>();
 
     // This collection holds the block entities
     private Dictionary<int, Block> Blocks = new Dictionary<int, Block>();
     private List<Vector2Int> BlockQueue = new List<Vector2Int>();
-
 
     // This collection holds tiles are clearing
     private HashSet<int> ClearingTiles = new HashSet<int>();
 
     // Clear set logic
     private List<ClearSet> ClearSets = new List<ClearSet>();
-    private int ChainLevel = 0;
+    public int ChainLevel { get; private set; } = 0;
 
     // This collection holds asynchronous update requests to process
-    public List<GridRequest> GridRequests;
+    public List<GridRequest> GridRequests = new List<GridRequest>();
 
     // Input-related declarations
     private ControlMap Inputs;
@@ -53,16 +52,15 @@ public class PuzzleGrid : MonoBehaviour
     private const int FAST_SCROLL_FRAMES = 10;
     private const int DANGER_ROW = 11;
     private const int BLOCK_SPAWN_ROW = 14;
+    private const float SCROLL_SPEED_BASE = 0.1f;
 
-    // Failure Conditions
+    // Player properties
     private float Health = 2f;
     private float StopTime = 0f;
 
-    // These properties affect the rendering of Griddables
+    // Rendering fields
 
-    /// <summary> 
-    /// Describes the relative position of the grid-space to world-space. 
-    /// </summary>
+    /// <summary> Describes the relative position of the grid-space to world-space. </summary>
     public Vector2 GridWorldPosition { get; private set; }
 
     /// <summary>
@@ -78,16 +76,16 @@ public class PuzzleGrid : MonoBehaviour
 
     void Awake()
     {
+
+        // Initialize Grid
         GridWorldPosition = transform.position + new Vector3(1, -1, 0);
-        Tiles = new Dictionary<int, Griddable>();
-        UnlockedTiles = new List<int>();
-        GridRequests = new List<GridRequest>();
         CreateInitialTileGrid();
-        
+
+        // Initialize cursor object
         CursorObject = Instantiate(Resources.Load<GameObject>("PuzzleCursorPrefab"), transform);
         UpdateCursorPosition();
 
-        // INITIALIZE CONTROLS
+        // Initialize controls
         Inputs = new ControlMap();
         Inputs.Enable();
         Inputs.Player.MoveCursor.performed += ctx => Movement = ctx.ReadValue<Vector2>();
@@ -95,7 +93,7 @@ public class PuzzleGrid : MonoBehaviour
         Inputs.Player.ScrollBoost.performed += ctx => ScrollBoostInput = true;
         Inputs.Player.ScrollBoost.canceled += ctx => ScrollBoostInput = false;
 
-        // Instantiate screen for inactive tiles
+        // Instantiate tile screen (acts as a sprite mask for the tiles)
         TileScreenObject = Instantiate(Resources.Load<GameObject>("TileScreen"), transform);
 
         // Start Music
@@ -105,17 +103,11 @@ public class PuzzleGrid : MonoBehaviour
     void FixedUpdate()
     {
 
-        // Spawn blocks for testing
-        if ((Time.time) % 10 == 0)
-        {
-            QueueBlock(new Vector2Int(3, 1));
-        }
-
         // Check the block queue for a valid spawn
-        CheckBlockQueueForSpawn();
+        ProcessBlockQueue();
 
         // Move Cursor
-        HandleCursorMovement();
+        ProcessCursorMovement();
 
         // Process Grid Requests
         ProcessGridRequests();
@@ -128,90 +120,25 @@ public class PuzzleGrid : MonoBehaviour
         }
 
         // Run Free Tile Physics
-        if (UnlockedTiles.Count != 0)
-        {
-            // Sort FreeTiles by grid y position in ascending order
-            List<int> _UnlockedTileTemp = new List<int>(UnlockedTiles);
-            _UnlockedTileTemp.Sort(CompareFreeTileHeightAscending);
-            for (int i = _UnlockedTileTemp.Count - 1; i >= 0; i--)
-            {
-                int TileKey = _UnlockedTileTemp[i];
-                Griddable _Tile = GetTileByID(TileKey);
-                if (!_Tile.LockedToGrid) _Tile.FreeFall();
-            }
-        }
+        UnlockedTilesFreefall();
 
         // Scroll Grid - Lock scroll if there are clearing or falling tiles that are not blocks
-        if (ClearingTiles.Count == 0)
-        {
-
-            // Check if there is a non-block falling
-            bool NonblockFalling = false;
-            foreach (int _TileID in UnlockedTiles)
-            {
-                Griddable _Tile = GetTileByID(_TileID);
-                if(_Tile.Type != Griddable.TileType.Block)
-                {
-                    NonblockFalling = true;
-                    break;
-                }
-            }
-
-            if (!NonblockFalling)
-            {
-                
-                if (RowContainsLockedTiles(CEILING_ROW))
-                {
-
-                    // If scrolling is otherwise legal but the ceiling row is reached, take damage.
-                    TakeDamage(Time.fixedDeltaTime);
-
-                }
-                else
-                {
-
-                    // If the scroll button is pressed while scrolling is legal, lock in the boost scroll speed until another row of tiles is created.
-                    if (ScrollBoostInput) ScrollBoostLock = true;
-                    float ScrollAmount = ScrollSpeed * Time.fixedDeltaTime;
-                    if (ScrollBoostLock) ScrollAmount *= SCROLL_BOOST_FACTOR;
-                    Scroll(ScrollAmount);
-
-                }
-            }
-
-        }
+        ProcessScrolling();
 
         // Check for tiles to clear
         ProcessClearing();
 
-        // Reset all locked tile's chain level if they are not clearing and are not over a swapping tile
-        for (int i = 0; i < GridSize.x; i++)
-        {
-            for (int j = 1; j < GridSize.y; j++)
-            {
-                if (TileGrid[i,j] != 0) // Ignore empty tiles
-                {
-                    Griddable _Tile = GetTileByGridCoordinate(new Vector2Int(i, j));
-                    if (!_Tile.IsClearing())
-                    {
-                        if (TileGrid[i, j-1] == 0 || !GetTileByGridCoordinate(new Vector2Int(i, j-1)).IsSwapping())
-                        {
-                            _Tile.ResetChainLevel();
-                        }
-                    }
-                }
-            }
+        // Reset all locked tile's chain level if they are not clearing, are not over a chaining tile, and are not over a swapping tile
+        ProcessChainingTiles();
 
-        }
-
-        // If Chain Level is 1, check to clear the chain level
+        // Check to clear the chain level
         CheckForEndOfChain();
 
         // Reposition Tile Screen
         TileScreenObject.transform.position = GridWorldPosition + Vector2.up * (FLOOR_ROW + GridScrollOffset - 1);
 
         // Determine Columns that should bounce
-        for(int i = 0; i < GridSize.x; i++)
+        for (int i = 0; i < GridSize.x; i++)
         {
             for (int j = 0; j < GridSize.y; j++)
             {
@@ -231,6 +158,122 @@ public class PuzzleGrid : MonoBehaviour
             }
         }
 
+    }
+
+    private void UnlockedTilesFreefall()
+    {
+        if (UnlockedTiles.Count != 0)
+        {
+            // Sort FreeTiles by grid y position in ascending order
+            List<int> _UnlockedTileTemp = new List<int>(UnlockedTiles);
+            _UnlockedTileTemp.Sort(CompareFreeTileHeightAscending);
+            for (int i = _UnlockedTileTemp.Count - 1; i >= 0; i--)
+            {
+                int TileKey = _UnlockedTileTemp[i];
+                Griddable _Tile = GetTileByID(TileKey);
+                if (!_Tile.LockedToGrid) _Tile.FreeFall();
+            }
+        }
+    }
+
+    private void ProcessScrolling(){
+        
+        if (ClearingTiles.Count == 0)
+        {
+
+            // Check if there is a non-block falling
+            bool NonblockFalling = false;
+            foreach (int _TileID in UnlockedTiles)
+            {
+                Griddable _Tile = GetTileByID(_TileID);
+                if (_Tile.Type != Griddable.TileType.Block)
+                {
+                    NonblockFalling = true;
+                    break;
+                }
+            }
+
+            if (!NonblockFalling)
+            {
+
+                if (RowContainsLockedTiles(CEILING_ROW))
+                {
+
+                    // If scrolling is otherwise legal but the ceiling row is reached, take damage.
+                    TakeDamage(Time.fixedDeltaTime);
+
+                }
+                else
+                {
+
+                    // If the scroll button is pressed while scrolling is legal, lock in the boost scroll speed until another row of tiles is created.
+                    if (ScrollBoostInput) ScrollBoostLock = true;
+                    float ScrollAmount = SCROLL_SPEED_BASE * Time.fixedDeltaTime;
+                    if (ScrollBoostLock) ScrollAmount *= SCROLL_BOOST_FACTOR;
+                    Scroll(ScrollAmount);
+
+                }
+            }
+
+        }
+
+    }
+
+    /// <summary>
+    /// Check all locked tiles for conditions to reset their chaining status. The following conditions will prevent resetting:
+    /// 1. The tile is not empty
+    /// 2. The tile is a basic tile
+    /// 3. The tile is not clearing
+    /// 4. The tile below is not empty
+    /// 5. The tile beneath the tile is not chaining
+    /// 6. The tile beneath the tile is not swapping
+    /// </summary>
+    public void ProcessChainingTiles()
+    {
+
+        for (int i = 0; i < GridSize.x; i++)
+        {
+
+            for (int j = 1; j < GridSize.y; j++)
+            {
+
+                // Check Condition 1
+                if (TileGrid[i, j] == 0) continue;
+
+                // Get tile class
+                Griddable _Tile = GetTileByGridCoordinate(new Vector2Int(i, j));
+
+                // Check Condition 2
+                if (_Tile.Type != Griddable.TileType.Basic) continue;
+
+                // Check Condition 3
+                if (_Tile.IsClearing()) continue;
+
+                // Check Condition 4
+                if (TileGrid[i, j - 1] == 0) continue;
+
+                // Get Tile Below
+                Griddable _TileBelow = GetTileByGridCoordinate(new Vector2Int(i, j - 1));
+
+                // Check Condition 5
+                if (_TileBelow.GetChaining()) continue;
+
+                // Check Condition 6
+                if (_TileBelow.IsSwapping()) continue;
+
+                // If no exceptions are found, set tile chaining to false
+                _Tile.SetChaining(false);
+
+            }
+
+        }
+
+    }
+
+    private void SetChainLevel(int _Level)
+    {
+        ChainLevel = _Level;
+        transform.Find("ChainLevelText").GetComponent<TextMeshPro>().text = _Level.ToString();
     }
 
     private void TakeDamage(float _DamageAmount)
@@ -305,7 +348,7 @@ public class PuzzleGrid : MonoBehaviour
                 AttachTileToGrid(_Tile, _TileCoordinate);
 
                 // Update tile
-                GridRequests.Add(new GridRequest { Type = GridRequestType.Update, Coordinate = _TileCoordinate, ChainLevel = GridRequests[i].ChainLevel });
+                GridRequests.Add(new GridRequest { Type = GridRequestType.Update, Coordinate = _TileCoordinate, Chaining = GridRequests[i].Chaining });
 
             }
 
@@ -315,7 +358,7 @@ public class PuzzleGrid : MonoBehaviour
                 Vector2Int _TileCoordinate = GridRequests[i].Coordinate;
                 int TileID = GetTileKeyAtGridCoordinate(_TileCoordinate);
                 Griddable.TileType _TileType = GetTileByID(TileID).Type;
-                GridRequests.Add(new GridRequest { Type = GridRequestType.Update, Coordinate = _TileCoordinate, ChainLevel = GridRequests[i].ChainLevel });
+                GridRequests.Add(new GridRequest { Type = GridRequestType.Update, Coordinate = _TileCoordinate, Chaining = GridRequests[i].Chaining });
                 UnattachTileFromGrid(_TileCoordinate);
                 DestroyUnlockedTile(GetTileByID(TileID));
 
@@ -336,9 +379,9 @@ public class PuzzleGrid : MonoBehaviour
                         Griddable _Tile = GetTileByGridCoordinate(TileCoordinate);
                         if (_Tile.FallAllowed())
                         {
-                            _Tile.SetChain(GridRequests[i].ChainLevel);
+                            _Tile.SetChaining(GridRequests[i].Chaining);
                             UnattachTileFromGrid(TileCoordinate);
-                            if (TileCoordinate.y < GridSize.y - 1) GridRequests.Add(new GridRequest { Type = GridRequestType.Update, Coordinate = TileCoordinate + Vector2Int.up, ChainLevel = GridRequests[i].ChainLevel });
+                            if (TileCoordinate.y < GridSize.y - 1) GridRequests.Add(new GridRequest { Type = GridRequestType.Update, Coordinate = TileCoordinate + Vector2Int.up, Chaining = GridRequests[i].Chaining });
                         }
                     }
                 }
@@ -349,7 +392,7 @@ public class PuzzleGrid : MonoBehaviour
                     // If the updated Tile is empty, check for an up-neighbor and unattach. Add that tile to the new requests hash
                     if (!CoordinateContainsLockedTile(TileCoordinate) && CoordinateContainsLockedTile(TileCoordinate + Vector2Int.up))
                     {
-                        GridRequests.Add(new GridRequest { Type = GridRequestType.Update, Coordinate = TileCoordinate + Vector2Int.up, ChainLevel = GridRequests[i].ChainLevel });
+                        GridRequests.Add(new GridRequest { Type = GridRequestType.Update, Coordinate = TileCoordinate + Vector2Int.up, Chaining = GridRequests[i].Chaining });
                     }
                 }
             }
@@ -363,7 +406,7 @@ public class PuzzleGrid : MonoBehaviour
     /// Handles all cursor movement, including fast scrolling after the same direction has been held
     /// for more frames than specified by FAST_SCROLL_FRAMES.
     /// </summary>
-    private void HandleCursorMovement()
+    private void ProcessCursorMovement()
     {
 
         // Handle Cursor Movement
@@ -463,13 +506,13 @@ public class PuzzleGrid : MonoBehaviour
 
             // Temporary - Remove Cleared Coordinates and check for chain
             int ListCount = ClearedCoordinatesList.Count;
-            int HighestChain = 0;
+            bool Chained = false;
 
             for (int i = 0; i < ListCount; i++)
             {
                 Vector2Int _TileCoordinate = ClearedCoordinatesList[i];
                 Griddable _Tile = GetTileByGridCoordinate(_TileCoordinate);
-                if (_Tile.ChainLevel > HighestChain) HighestChain = _Tile.ChainLevel;
+                if (_Tile.GetChaining()) Chained = true;
                 _Tile.Clear(i, ListCount);
                 GridRequests.Add(new GridRequest { Type = GridRequestType.BlockClear, Coordinate = _TileCoordinate });
                 ClearingTiles.Add(_Tile.KeyID);
@@ -486,10 +529,10 @@ public class PuzzleGrid : MonoBehaviour
             }
 
             // Check for chain
-            if (HighestChain > 0)
+            if (Chained)
             {
                 GameAssets.Sound.Combo1.Play();
-                ChainLevel++;
+                SetChainLevel(ChainLevel + 1);
                 GameObject CounterObject = Instantiate(Resources.Load<GameObject>("TechCounterObject"));
                 TechCounter Counter = CounterObject.GetComponent<TechCounter>();
                 Griddable FirstTile = GetTileByGridCoordinate(ClearedCoordinatesList[0]);
@@ -514,16 +557,36 @@ public class PuzzleGrid : MonoBehaviour
     /// </summary>
     private void CheckForEndOfChain()
     {
+
+        if (ChainLevel == 0) return;
+
         bool ContinueChain = false;
+        
+        // Check for grid tiles
         foreach(Griddable _Tile in Tiles.Values)
         {
-            if (_Tile.ChainLevel > 1 || _Tile.IsClearing())
+            if (_Tile.GetChaining())
             {
                 ContinueChain = true;
                 break;
             }
         }
-        if (!ContinueChain) ChainLevel = 0;
+
+        // Check falling tiles
+        if (!ContinueChain)
+        {
+            foreach (int _TildID in UnlockedTiles)
+            {
+                Griddable _Tile = GetTileByID(_TildID);
+                if (_Tile.GetChaining())
+                {
+                    ContinueChain = true;
+                    break;
+                }
+            }
+        }
+
+        if (!ContinueChain) SetChainLevel(0);
     }
 
     /// <summary>
@@ -870,8 +933,8 @@ public class PuzzleGrid : MonoBehaviour
         if (!_Tile.LockedToGrid) DestroyUnlockedTile(_Tile);
         else
         {
-            if (_Chain) GridRequests.Add(new GridRequest { Type = GridRequestType.Destroy, Coordinate = _Tile.GridCoordinate, ChainLevel = _Tile.ChainLevel + 1 });
-            else GridRequests.Add(new GridRequest { Type = GridRequestType.Destroy, Coordinate = _Tile.GridCoordinate, ChainLevel = 0 });
+            if (_Chain) GridRequests.Add(new GridRequest { Type = GridRequestType.Destroy, Coordinate = _Tile.GridCoordinate, Chaining = true });
+            else GridRequests.Add(new GridRequest { Type = GridRequestType.Destroy, Coordinate = _Tile.GridCoordinate, Chaining = false });
         }
     }
 
@@ -893,7 +956,7 @@ public class PuzzleGrid : MonoBehaviour
         BlockQueue.Add(_BlockSize);
     }
 
-    private void CheckBlockQueueForSpawn()
+    private void ProcessBlockQueue()
     {
         
         // Return if the block queue is empty
@@ -966,13 +1029,13 @@ public class PuzzleGrid : MonoBehaviour
         Blocks.Remove(_BlockID);
     }
 
-    public void RequestTileReplacement(BasicTile.TileColor _TileColor, Vector2Int _Coordinate, int _ChainLevel)
+    public void RequestTileReplacement(BasicTile.TileColor _TileColor, Vector2Int _Coordinate, bool _Chaining)
     {
         GridRequests.Add(
                 new GridRequest { 
                     Type = GridRequestType.ReplaceWithTile, 
                     Coordinate = _Coordinate, 
-                    ChainLevel = _ChainLevel, 
+                    Chaining = _Chaining, 
                     TileColor = _TileColor 
                 } 
             );

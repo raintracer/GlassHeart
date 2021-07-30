@@ -24,10 +24,10 @@ public class BlockTile : Griddable
     {
         MyBlock = _MyBlock;
         Section = _BlockSection;
-        UpdateSprite();
+        InitializeSprite();
     }
 
-    protected override void UpdateSprite()
+    protected override void InitializeSprite()
     {
 
         Sprite BlockSprite = null;
@@ -118,7 +118,7 @@ public class BlockTile : Griddable
         RequestDestruction(true);
 
         // Request replacement
-        ParentGrid.RequestTileReplacement(_TileColor, GridCoordinate, ChainLevel);
+        ParentGrid.RequestTileReplacement(_TileColor, GridCoordinate, GetChaining());
 
     }
 

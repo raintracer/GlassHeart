@@ -122,7 +122,7 @@ public class Block
             for (int i = 0; i < BlockSize.x; i++)
             {
                 BlockTile _BlockTile = BlockTiles[i];
-                ParentGrid.GridRequests.Add( new GridRequest { Type = GridRequestType.Update, Coordinate = _BlockTile.GridCoordinate, ChainLevel = 0 } );
+                ParentGrid.GridRequests.Add( new GridRequest { Type = GridRequestType.Update, Coordinate = _BlockTile.GridCoordinate, Chaining = false } );
             } 
         }
 

@@ -12,11 +12,12 @@ public class HangtimeEtherealTile : Griddable
 
     public HangtimeEtherealTile(PuzzleGrid Grid, int _Key, Vector2 _GridPos) : base(Grid, _Key, _GridPos, true)
     {
-        UpdateSprite();
+        InitializeSprite();
         mono.StartCoroutine(DestructionTimer());
+        SetChaining(true);
     }
 
-    protected override void UpdateSprite()
+    protected override void InitializeSprite()
     {
         SR_Background.sprite = null;
         SR_Icon.sprite = null;
@@ -24,7 +25,7 @@ public class HangtimeEtherealTile : Griddable
 
     private IEnumerator DestructionTimer()
     {
-        yield return new WaitForSeconds(0.2f);
+        yield return new WaitForSeconds(0.1f);
         RequestDestruction(true);
     }
 

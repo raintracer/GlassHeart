@@ -10,10 +10,10 @@ public class SwapTempTile : Griddable
 
     public SwapTempTile(PuzzleGrid Grid, int _Key, Vector2 _GridPos) : base(Grid, _Key, _GridPos, true)
     {
-        UpdateSprite();
+        InitializeSprite();
     }
 
-    protected override void UpdateSprite()
+    protected override void InitializeSprite()
     {
         SR_Background.sprite = null;
         SR_Icon.sprite = null;
