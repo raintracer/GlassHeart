@@ -44,6 +44,10 @@ public class PuzzleGrid : MonoBehaviour
     private bool CusorSwitchFlag = false;
     private bool ScrollBoostInput = false;
     private bool ScrollBoostLock = false;
+    private bool FireInputFlag = false;
+    private bool WaterInputFlag = false;
+    private bool AirInputFlag = false;
+    private bool EarthInputFlag = false;
 
     // Constants
     private const int CEILING_ROW = 13;
@@ -55,7 +59,10 @@ public class PuzzleGrid : MonoBehaviour
     private const float SCROLL_SPEED_BASE = 0.1f;
 
     // Player properties
-    private float Health = 2f;
+    private float MaxHealth = 10f;
+    private float Health = 10f;
+    private float MaxStamina = 3f;
+    private float Stamina = 3f;
     private float StopTime = 0f;
 
     // Rendering fields
@@ -71,6 +78,16 @@ public class PuzzleGrid : MonoBehaviour
 
     // Tile screen handlers
     GameObject TileScreenObject;
+
+    // Spell Data
+    [SerializeField] private Spell FireSpell;
+    [SerializeField] private Spell WaterSpell;
+    [SerializeField] private Spell EarthSpell;
+    [SerializeField] private Spell AirSpell;
+    private float HyperBoostTime = 0;
+    private float HyperBoostIntensity = 1;
+    private float IceTime = 0f;
+
 
     #region Unity Events
 
@@ -92,6 +109,10 @@ public class PuzzleGrid : MonoBehaviour
         Inputs.Player.SwitchAtCursor.started += ctx => CusorSwitchFlag = true;
         Inputs.Player.ScrollBoost.performed += ctx => ScrollBoostInput = true;
         Inputs.Player.ScrollBoost.canceled += ctx => ScrollBoostInput = false;
+        Inputs.Player.CastAir.canceled += ctx => AirInputFlag = true;
+        Inputs.Player.CastEarth.canceled += ctx => EarthInputFlag = true;
+        Inputs.Player.CastFire.canceled += ctx => FireInputFlag = true;
+        Inputs.Player.CastWater.canceled += ctx => WaterInputFlag = true;
 
         // Instantiate tile screen (acts as a sprite mask for the tiles)
         TileScreenObject = Instantiate(Resources.Load<GameObject>("TileScreen"), transform);
@@ -105,6 +126,9 @@ public class PuzzleGrid : MonoBehaviour
 
         // Check the block queue for a valid spawn
         ProcessBlockQueue();
+
+        // Process Spell Inputs
+        ProcessSpellInputs();
 
         // Move Cursor
         ProcessCursorMovement();
@@ -160,6 +184,42 @@ public class PuzzleGrid : MonoBehaviour
 
     }
 
+    private void ProcessSpellInputs()
+    {
+
+        if (EarthInputFlag)
+        {
+            EarthInputFlag = false;
+            ExecuteSpell(EarthSpell);
+        }
+
+        if (WaterInputFlag)
+        {
+            WaterInputFlag = false;
+            ExecuteSpell(WaterSpell);
+        }
+
+        if (FireInputFlag)
+        {
+            FireInputFlag = false;
+            ExecuteSpell(FireSpell);
+        }
+
+        if (AirInputFlag)
+        {
+            AirInputFlag = false;
+            ExecuteSpell(AirSpell);
+        }
+
+    }
+
+    private void ExecuteSpell(Spell _Spell)
+    {
+        HyperBoostTime = _Spell.BoostTime;
+        HyperBoostIntensity = _Spell.BoostIntensity;
+        IceTime = _Spell.StopTime;
+    }
+
     private void UnlockedTilesFreefall()
     {
         if (UnlockedTiles.Count != 0)
@@ -177,9 +237,33 @@ public class PuzzleGrid : MonoBehaviour
     }
 
     private void ProcessScrolling(){
-        
-        if (ClearingTiles.Count == 0)
+
+        // Slowly regain stamina up to max stamina
+        ChangeStamina(Time.fixedDeltaTime / 10.0f);
+
+        if (IceTime > 0f)
         {
+            IceTime -= Time.fixedDeltaTime;
+            if (IceTime < 0)
+            {
+                IceTime = 0;
+            }
+            return;
+        }
+
+        if (ClearingTiles.Count == 0 || HyperBoostTime > 0f)
+        {
+
+            // Decerement hyper boost time if it is active
+            if(HyperBoostTime > 0)
+            {
+                HyperBoostTime -= Time.fixedDeltaTime;
+                if (HyperBoostTime < 0)
+                {
+                    HyperBoostTime = 0;
+                    HyperBoostIntensity = 1;
+                }
+            }
 
             // Check if there is a non-block falling
             bool NonblockFalling = false;
@@ -193,7 +277,7 @@ public class PuzzleGrid : MonoBehaviour
                 }
             }
 
-            if (!NonblockFalling)
+            if (!NonblockFalling || HyperBoostTime > 0f)
             {
 
                 if (RowContainsLockedTiles(CEILING_ROW))
@@ -207,15 +291,64 @@ public class PuzzleGrid : MonoBehaviour
                 {
 
                     // If the scroll button is pressed while scrolling is legal, lock in the boost scroll speed until another row of tiles is created.
-                    if (ScrollBoostInput) ScrollBoostLock = true;
-                    float ScrollAmount = SCROLL_SPEED_BASE * Time.fixedDeltaTime;
-                    if (ScrollBoostLock) ScrollAmount *= SCROLL_BOOST_FACTOR;
+                    if (!ScrollBoostLock)
+                    {
+                        if (ScrollBoostInput && Stamina >= Time.deltaTime)
+                        {
+                            ScrollBoostLock = true;
+                        }       
+                    }
+
+                    float ScrollAmount = 0f;
+                    // Hyperboost over-rides manual scroll boost
+                    if (HyperBoostTime > 0f)
+                    {
+                        ScrollAmount = SCROLL_SPEED_BASE * Time.fixedDeltaTime * HyperBoostIntensity;
+                    }
+
+                    // Manual scroll boost stops if stamina reaches zero
+                    else if (ScrollBoostLock && Stamina > 0f)
+                    {
+                        
+                        // Lose some stamina
+                        ChangeStamina(-Time.fixedDeltaTime);
+                        ScrollAmount = SCROLL_SPEED_BASE * Time.fixedDeltaTime * SCROLL_BOOST_FACTOR;
+
+                    }
+                    else
+                    {
+                        ScrollAmount = SCROLL_SPEED_BASE * Time.fixedDeltaTime;
+                        ScrollBoostLock = false;
+                    }
+
                     Scroll(ScrollAmount);
 
                 }
             }
 
         }
+
+    }
+
+    void ChangeStamina(float _ChangeAmount)
+    {
+
+        Stamina += _ChangeAmount;
+
+        if (Stamina > MaxStamina)
+        {
+            Stamina = MaxStamina;
+        }
+
+        if (Stamina < 0)
+        {
+            Stamina = 0;
+            ScrollBoostLock = false;
+            ScrollBoostInput = false;
+        }
+
+        // Update stamina bar
+        transform.Find("Stamina Meter").Find("Meter").localScale = new Vector3 (12f, 288 * (Stamina / MaxStamina));
 
     }
 
@@ -283,6 +416,11 @@ public class PuzzleGrid : MonoBehaviour
         {
             Destroy(gameObject);
         }
+
+        Transform HealthMeterTransform = transform.Find("Health Meter");
+        Transform MeterTransform = HealthMeterTransform.Find("Meter");
+        MeterTransform.localScale = new Vector3(12, 288 * (Health / MaxHealth) );
+
     }
 
     /// <summary>
