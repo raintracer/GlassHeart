@@ -41,6 +41,38 @@ public class @ControlMap : IInputActionCollection, IDisposable
                     ""expectedControlType"": ""Button"",
                     ""processors"": """",
                     ""interactions"": ""Press(behavior=2)""
+                },
+                {
+                    ""name"": ""CastFire"",
+                    ""type"": ""Button"",
+                    ""id"": ""01d0f3b1-48f4-4cb4-ab3f-002074cb6720"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": ""Press(behavior=2)""
+                },
+                {
+                    ""name"": ""CastWater"",
+                    ""type"": ""Button"",
+                    ""id"": ""bf1b1cdf-1463-412e-8646-cf96addce5db"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": ""Press(behavior=2)""
+                },
+                {
+                    ""name"": ""CastEarth"",
+                    ""type"": ""Button"",
+                    ""id"": ""1c32870b-0167-41b2-9cf8-279900484c8c"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": ""Press(behavior=2)""
+                },
+                {
+                    ""name"": ""CastAir"",
+                    ""type"": ""Button"",
+                    ""id"": ""384eba99-17a6-4b35-9ec1-37cd02c5ec20"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": ""Press(behavior=2)""
                 }
             ],
             ""bindings"": [
@@ -241,6 +273,50 @@ public class @ControlMap : IInputActionCollection, IDisposable
                     ""action"": ""ScrollBoost"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""9a2629cb-c06e-4372-a065-b3f895304701"",
+                    ""path"": ""<Gamepad>/rightTrigger"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""CastFire"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""246f658b-1077-4058-ba7a-c235d69eb7cc"",
+                    ""path"": ""<Gamepad>/rightShoulder"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""CastWater"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""97f25ac7-6c70-4fc2-a089-4a6252d5d30e"",
+                    ""path"": ""<Gamepad>/leftShoulder"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""CastEarth"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""fca2b9bd-ab74-4910-b3c6-4f87062095d1"",
+                    ""path"": ""<Gamepad>/leftTrigger"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""CastAir"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -252,6 +328,10 @@ public class @ControlMap : IInputActionCollection, IDisposable
         m_Player_MoveCursor = m_Player.FindAction("MoveCursor", throwIfNotFound: true);
         m_Player_SwitchAtCursor = m_Player.FindAction("SwitchAtCursor", throwIfNotFound: true);
         m_Player_ScrollBoost = m_Player.FindAction("ScrollBoost", throwIfNotFound: true);
+        m_Player_CastFire = m_Player.FindAction("CastFire", throwIfNotFound: true);
+        m_Player_CastWater = m_Player.FindAction("CastWater", throwIfNotFound: true);
+        m_Player_CastEarth = m_Player.FindAction("CastEarth", throwIfNotFound: true);
+        m_Player_CastAir = m_Player.FindAction("CastAir", throwIfNotFound: true);
     }
 
     public void Dispose()
@@ -304,6 +384,10 @@ public class @ControlMap : IInputActionCollection, IDisposable
     private readonly InputAction m_Player_MoveCursor;
     private readonly InputAction m_Player_SwitchAtCursor;
     private readonly InputAction m_Player_ScrollBoost;
+    private readonly InputAction m_Player_CastFire;
+    private readonly InputAction m_Player_CastWater;
+    private readonly InputAction m_Player_CastEarth;
+    private readonly InputAction m_Player_CastAir;
     public struct PlayerActions
     {
         private @ControlMap m_Wrapper;
@@ -311,6 +395,10 @@ public class @ControlMap : IInputActionCollection, IDisposable
         public InputAction @MoveCursor => m_Wrapper.m_Player_MoveCursor;
         public InputAction @SwitchAtCursor => m_Wrapper.m_Player_SwitchAtCursor;
         public InputAction @ScrollBoost => m_Wrapper.m_Player_ScrollBoost;
+        public InputAction @CastFire => m_Wrapper.m_Player_CastFire;
+        public InputAction @CastWater => m_Wrapper.m_Player_CastWater;
+        public InputAction @CastEarth => m_Wrapper.m_Player_CastEarth;
+        public InputAction @CastAir => m_Wrapper.m_Player_CastAir;
         public InputActionMap Get() { return m_Wrapper.m_Player; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -329,6 +417,18 @@ public class @ControlMap : IInputActionCollection, IDisposable
                 @ScrollBoost.started -= m_Wrapper.m_PlayerActionsCallbackInterface.OnScrollBoost;
                 @ScrollBoost.performed -= m_Wrapper.m_PlayerActionsCallbackInterface.OnScrollBoost;
                 @ScrollBoost.canceled -= m_Wrapper.m_PlayerActionsCallbackInterface.OnScrollBoost;
+                @CastFire.started -= m_Wrapper.m_PlayerActionsCallbackInterface.OnCastFire;
+                @CastFire.performed -= m_Wrapper.m_PlayerActionsCallbackInterface.OnCastFire;
+                @CastFire.canceled -= m_Wrapper.m_PlayerActionsCallbackInterface.OnCastFire;
+                @CastWater.started -= m_Wrapper.m_PlayerActionsCallbackInterface.OnCastWater;
+                @CastWater.performed -= m_Wrapper.m_PlayerActionsCallbackInterface.OnCastWater;
+                @CastWater.canceled -= m_Wrapper.m_PlayerActionsCallbackInterface.OnCastWater;
+                @CastEarth.started -= m_Wrapper.m_PlayerActionsCallbackInterface.OnCastEarth;
+                @CastEarth.performed -= m_Wrapper.m_PlayerActionsCallbackInterface.OnCastEarth;
+                @CastEarth.canceled -= m_Wrapper.m_PlayerActionsCallbackInterface.OnCastEarth;
+                @CastAir.started -= m_Wrapper.m_PlayerActionsCallbackInterface.OnCastAir;
+                @CastAir.performed -= m_Wrapper.m_PlayerActionsCallbackInterface.OnCastAir;
+                @CastAir.canceled -= m_Wrapper.m_PlayerActionsCallbackInterface.OnCastAir;
             }
             m_Wrapper.m_PlayerActionsCallbackInterface = instance;
             if (instance != null)
@@ -342,6 +442,18 @@ public class @ControlMap : IInputActionCollection, IDisposable
                 @ScrollBoost.started += instance.OnScrollBoost;
                 @ScrollBoost.performed += instance.OnScrollBoost;
                 @ScrollBoost.canceled += instance.OnScrollBoost;
+                @CastFire.started += instance.OnCastFire;
+                @CastFire.performed += instance.OnCastFire;
+                @CastFire.canceled += instance.OnCastFire;
+                @CastWater.started += instance.OnCastWater;
+                @CastWater.performed += instance.OnCastWater;
+                @CastWater.canceled += instance.OnCastWater;
+                @CastEarth.started += instance.OnCastEarth;
+                @CastEarth.performed += instance.OnCastEarth;
+                @CastEarth.canceled += instance.OnCastEarth;
+                @CastAir.started += instance.OnCastAir;
+                @CastAir.performed += instance.OnCastAir;
+                @CastAir.canceled += instance.OnCastAir;
             }
         }
     }
@@ -351,5 +463,9 @@ public class @ControlMap : IInputActionCollection, IDisposable
         void OnMoveCursor(InputAction.CallbackContext context);
         void OnSwitchAtCursor(InputAction.CallbackContext context);
         void OnScrollBoost(InputAction.CallbackContext context);
+        void OnCastFire(InputAction.CallbackContext context);
+        void OnCastWater(InputAction.CallbackContext context);
+        void OnCastEarth(InputAction.CallbackContext context);
+        void OnCastAir(InputAction.CallbackContext context);
     }
 }

@@ -28,6 +28,38 @@
                     "expectedControlType": "Button",
                     "processors": "",
                     "interactions": "Press(behavior=2)"
+                },
+                {
+                    "name": "CastFire",
+                    "type": "Button",
+                    "id": "01d0f3b1-48f4-4cb4-ab3f-002074cb6720",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "Press(behavior=2)"
+                },
+                {
+                    "name": "CastWater",
+                    "type": "Button",
+                    "id": "bf1b1cdf-1463-412e-8646-cf96addce5db",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "Press(behavior=2)"
+                },
+                {
+                    "name": "CastEarth",
+                    "type": "Button",
+                    "id": "1c32870b-0167-41b2-9cf8-279900484c8c",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "Press(behavior=2)"
+                },
+                {
+                    "name": "CastAir",
+                    "type": "Button",
+                    "id": "384eba99-17a6-4b35-9ec1-37cd02c5ec20",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "Press(behavior=2)"
                 }
             ],
             "bindings": [
@@ -226,6 +258,50 @@
                     "processors": "",
                     "groups": "",
                     "action": "ScrollBoost",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "9a2629cb-c06e-4372-a065-b3f895304701",
+                    "path": "<Gamepad>/rightTrigger",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "CastFire",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "246f658b-1077-4058-ba7a-c235d69eb7cc",
+                    "path": "<Gamepad>/rightShoulder",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "CastWater",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "97f25ac7-6c70-4fc2-a089-4a6252d5d30e",
+                    "path": "<Gamepad>/leftShoulder",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "CastEarth",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "fca2b9bd-ab74-4910-b3c6-4f87062095d1",
+                    "path": "<Gamepad>/leftTrigger",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "CastAir",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

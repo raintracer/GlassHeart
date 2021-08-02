@@ -29,7 +29,7 @@ public abstract class Griddable
     public int KeyID { get; private set; }
 
     // Constant or Read-Only Fields
-    protected const float FALL_SPEED = 0.04F;
+    protected const float FALL_SPEED = 0.4F;
     protected readonly static int SWAP_FRAMES = 4;
     protected readonly static int CLEAR_FLASH_FRAMES = 40;
     protected readonly static int CLEAR_BUST_DELAY_FRAMES = 10;
@@ -114,14 +114,14 @@ public abstract class Griddable
     {
 
         Chaining = _Chaining;
-        if (Chaining)
-        {
-            DebugTextMesh.text = 1.ToString();
-        }
-        else
-        {
-            DebugTextMesh.text = 0.ToString();
-        }
+        //if (Chaining)
+        //{
+        //    DebugTextMesh.text = 1.ToString();
+        //}
+        //else
+        //{
+        //    DebugTextMesh.text = 0.ToString();
+        //}
         
     }
 
