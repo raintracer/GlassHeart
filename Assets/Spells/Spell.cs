@@ -7,6 +7,8 @@ public class Spell : ScriptableObject
 {
 
     public enum Element { Air, Water, Fire, Earth }
+    public enum SpellEffect { None, IncinerateRowAtCursor };
+
 
     public string SpellName;
     public float BoostTime;
@@ -16,5 +18,6 @@ public class Spell : ScriptableObject
 
     public bool HasRowBurst;
 
-
+    public SpellEffect[] SpellEffects;
+    
 }

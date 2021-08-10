@@ -18,3 +18,4 @@ MonoBehaviour:
   StopTime: 5
   FloatTime: 0
   HasRowBurst: 0
+  SpellEffects: 00000000

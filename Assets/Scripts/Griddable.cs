@@ -39,7 +39,7 @@ public abstract class Griddable
     protected State state;
 
     // Animation Control Fields
-    public enum Animation { None, Swap, Land, Clear, Bounce };
+    public enum Animation { None, Swap, Land, Clear, Bounce, Incinerate };
     Coroutine AnimationRoutine = null;
     Animation CurentAnimation = Animation.None;
     public bool LockedToGrid { get; private set; }
@@ -160,6 +160,12 @@ public abstract class Griddable
         ChangeAnimation(Animation.Clear, IntCommand1: ClearOrder, IntCommand2: ClearTotal);
     }
 
+    virtual public void Incinerate()
+    {
+        state = State.Clearing;
+        ChangeAnimation(Animation.Incinerate);
+    }
+
     public void ShiftPosition(float _ShiftAmount)
     {
         GridPosition += new Vector2(0, _ShiftAmount);
@@ -252,6 +258,11 @@ public abstract class Griddable
         return (state == State.Set);
     }
 
+    virtual public bool IncinerateAllowed()
+    {
+        return true;
+    }
+
     #endregion
 
     #region Animation and GameObject
@@ -300,6 +311,9 @@ public abstract class Griddable
                 break;
             case Animation.Bounce:
                 AnimationRoutine = mono.StartCoroutine(AnimateBounce());
+                break;
+            case Animation.Incinerate:
+                AnimationRoutine = mono.StartCoroutine(AnimateIncinerate());
                 break;
             default:
                 Debug.LogError("Unrecognized animation requested: " + _Animation);
@@ -391,6 +405,25 @@ public abstract class Griddable
 
         // Request Destruction
         RequestDestruction(true);
+
+    }
+
+    virtual protected IEnumerator AnimateIncinerate()
+    {
+
+        // Bust Instantly
+        SR_Background.sprite = null;
+        SR_Icon.sprite = null;
+        GameAssets.Sound.DefaultBust.Play();
+
+        // Emit a bust particle
+        ParticleController Particles = GameObject.Instantiate(Resources.Load<GameObject>("ParticleController")).GetComponent<ParticleController>();
+        Particles.StartParticle("TilePop", GO.transform.position + new Vector3(0.5f, 0.5f, 0f), 0.5f);
+
+        // Request Destruction
+        RequestDestruction(true);
+
+        yield return null;
 
     }
 

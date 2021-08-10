@@ -87,13 +87,14 @@ public class PuzzleGrid : MonoBehaviour
     private float HyperBoostTime = 0;
     private float HyperBoostIntensity = 1;
     private float IceTime = 0f;
+    private float FloatTime = 0f;
 
     // Mana Data
-    private float MaxMana = 10f;
-    private float AirMana = 0f;
-    private float EarthMana = 0f;
-    private float FireMana = 0f;
-    private float WaterMana = 0f;
+    private float MaxMana = 3f;
+    private float AirMana;
+    private float EarthMana;
+    private float FireMana;
+    private float WaterMana;
 
 
     #region Unity Events
@@ -195,111 +196,30 @@ public class PuzzleGrid : MonoBehaviour
 
     }
 
-    private void SetInitialMana()
-    {
-
-        SetMana(0f, Spell.Element.Air);
-        SetMana(0f, Spell.Element.Earth);
-        SetMana(0f, Spell.Element.Fire);
-        SetMana(0f, Spell.Element.Water);
-
-    }
-
-    private float GetManaByElement(Spell.Element _ManaElement)
-    {
-        switch (_ManaElement)
-        {
-            case Spell.Element.Air:
-                return AirMana;
-            case Spell.Element.Water:
-                return WaterMana;
-            case Spell.Element.Fire:
-                return FireMana;
-            case Spell.Element.Earth:
-                return EarthMana;
-            default:
-                Debug.LogError("Unrecognized Mana Type Requested.");
-                return 0;
-        }
-    }
-
-    private Spell GetSpellByElement(Spell.Element _ManaElement)
-    {
-        switch (_ManaElement)
-        {
-            case Spell.Element.Air:
-                return AirSpell;
-            case Spell.Element.Water:
-                return WaterSpell;
-            case Spell.Element.Fire:
-                return FireSpell;
-            case Spell.Element.Earth:
-                return EarthSpell;
-            default:
-                Debug.LogError("Unrecognized Spell Type Requested.");
-                return AirSpell;
-        }
-    }
-
-
-    private void ProcessSpellInputs()
-    {
-
-        Spell.Element? SpellElement = null;
-
-        if (EarthInputFlag)
-        {
-            EarthInputFlag = false;
-            SpellElement = Spell.Element.Earth;
-        }
-        else if (WaterInputFlag)
-        {
-            WaterInputFlag = false;
-            SpellElement = Spell.Element.Water;
-        }
-        else if (FireInputFlag)
-        {
-            FireInputFlag = false;
-            SpellElement = Spell.Element.Fire;
-        }
-        else if (AirInputFlag)
-        {
-            AirInputFlag = false;
-            SpellElement = Spell.Element.Air;
-        }
-
-        if (SpellElement == null) return;
-
-        Spell SpellUsed = GetSpellByElement((Spell.Element) SpellElement);
-        float SpellMana = GetManaByElement((Spell.Element) SpellElement);
-
-        if(SpellMana == MaxMana)
-        {
-            ExecuteSpell(SpellUsed);
-            SetMana(0f, (Spell.Element) SpellElement);
-        }
-
-    }
-
-    private void ExecuteSpell(Spell _Spell)
-    {
-        HyperBoostTime = _Spell.BoostTime;
-        HyperBoostIntensity = _Spell.BoostIntensity;
-        IceTime = _Spell.StopTime;
-    }
+    
 
     private void UnlockedTilesFreefall()
     {
-        if (UnlockedTiles.Count != 0)
+
+        // Only freefall if float time is not active
+        if (FloatTime > 0)
         {
-            // Sort FreeTiles by grid y position in ascending order
-            List<int> _UnlockedTileTemp = new List<int>(UnlockedTiles);
-            _UnlockedTileTemp.Sort(CompareFreeTileHeightAscending);
-            for (int i = _UnlockedTileTemp.Count - 1; i >= 0; i--)
+            FloatTime -= Time.fixedDeltaTime;
+            if (FloatTime < 0) FloatTime = 0;
+        }
+        else
+        {
+            if (UnlockedTiles.Count != 0)
             {
-                int TileKey = _UnlockedTileTemp[i];
-                Griddable _Tile = GetTileByID(TileKey);
-                if (!_Tile.LockedToGrid) _Tile.FreeFall();
+                // Sort FreeTiles by grid y position in ascending order
+                List<int> _UnlockedTileTemp = new List<int>(UnlockedTiles);
+                _UnlockedTileTemp.Sort(CompareFreeTileHeightAscending);
+                for (int i = _UnlockedTileTemp.Count - 1; i >= 0; i--)
+                {
+                    int TileKey = _UnlockedTileTemp[i];
+                    Griddable _Tile = GetTileByID(TileKey);
+                    if (!_Tile.LockedToGrid) _Tile.FreeFall();
+                }
             }
         }
     }
@@ -925,6 +845,142 @@ public class PuzzleGrid : MonoBehaviour
         else
         {
             return CoordinateB.y.CompareTo(CoordinateA.y);
+        }
+    }
+
+    #endregion
+
+    #region Spell Methods
+
+    private void SetInitialMana()
+    {
+
+        SetMana(0f, Spell.Element.Air);
+        SetMana(0f, Spell.Element.Earth);
+        SetMana(0f, Spell.Element.Fire);
+        SetMana(0f, Spell.Element.Water);
+
+    }
+
+    private float GetManaByElement(Spell.Element _ManaElement)
+    {
+        switch (_ManaElement)
+        {
+            case Spell.Element.Air:
+                return AirMana;
+            case Spell.Element.Water:
+                return WaterMana;
+            case Spell.Element.Fire:
+                return FireMana;
+            case Spell.Element.Earth:
+                return EarthMana;
+            default:
+                Debug.LogError("Unrecognized Mana Type Requested.");
+                return 0;
+        }
+    }
+
+    private Spell GetSpellByElement(Spell.Element _ManaElement)
+    {
+        switch (_ManaElement)
+        {
+            case Spell.Element.Air:
+                return AirSpell;
+            case Spell.Element.Water:
+                return WaterSpell;
+            case Spell.Element.Fire:
+                return FireSpell;
+            case Spell.Element.Earth:
+                return EarthSpell;
+            default:
+                Debug.LogError("Unrecognized Spell Type Requested.");
+                return AirSpell;
+        }
+    }
+
+
+    private void ProcessSpellInputs()
+    {
+
+        Spell.Element? SpellElement = null;
+
+        if (EarthInputFlag)
+        {
+            EarthInputFlag = false;
+            SpellElement = Spell.Element.Earth;
+        }
+        else if (WaterInputFlag)
+        {
+            WaterInputFlag = false;
+            SpellElement = Spell.Element.Water;
+        }
+        else if (FireInputFlag)
+        {
+            FireInputFlag = false;
+            SpellElement = Spell.Element.Fire;
+        }
+        else if (AirInputFlag)
+        {
+            AirInputFlag = false;
+            SpellElement = Spell.Element.Air;
+        }
+
+        if (SpellElement == null) return;
+
+        Spell SpellUsed = GetSpellByElement((Spell.Element)SpellElement);
+        float SpellMana = GetManaByElement((Spell.Element)SpellElement);
+
+        if (SpellMana == MaxMana)
+        {
+            ExecuteSpell(SpellUsed);
+            SetMana(0f, (Spell.Element)SpellElement);
+        }
+
+    }
+
+    private void ExecuteSpell(Spell _Spell)
+    {
+        HyperBoostTime = _Spell.BoostTime;
+        HyperBoostIntensity = _Spell.BoostIntensity;
+        IceTime = _Spell.StopTime;
+        FloatTime = _Spell.FloatTime;
+
+        foreach(Spell.SpellEffect _Effect in _Spell.SpellEffects)
+        {
+            switch (_Effect)
+            {
+                case Spell.SpellEffect.None:
+                    break;
+                case Spell.SpellEffect.IncinerateRowAtCursor:
+                    IncinerateRow(CursorPosition.y);
+                    break;
+                default:
+                    Debug.LogError("Unrecognized spell effect tried to execute: " + _Effect);
+                    break;
+            }
+        }
+
+    }
+
+    private void TryToIncinerateTile(int TileKey)
+    {
+        if (TileKey == 0) return;
+        
+        Griddable _Tile = GetTileByID(TileKey);
+        
+        if (_Tile.IncinerateAllowed()) _Tile.Incinerate();
+    }
+
+    private void IncinerateRow(int RowIndex)
+    {
+
+        if (RowIndex < 0 || RowIndex >= GridSize.y) Debug.LogError("Invalid row sent on Incinerate Row command: Row " + RowIndex);
+
+        for (int i = 0; i < GridSize.x; i++)
+        {
+            Vector2Int _Coordinate = new Vector2Int(i, RowIndex);
+            int _TileKey = GetTileKeyAtGridCoordinate(_Coordinate);
+            TryToIncinerateTile(_TileKey);
         }
     }
 
