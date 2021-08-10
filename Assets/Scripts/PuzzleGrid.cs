@@ -88,6 +88,13 @@ public class PuzzleGrid : MonoBehaviour
     private float HyperBoostIntensity = 1;
     private float IceTime = 0f;
 
+    // Mana Data
+    private float MaxMana = 10f;
+    private float AirMana = 0f;
+    private float EarthMana = 0f;
+    private float FireMana = 0f;
+    private float WaterMana = 0f;
+
 
     #region Unity Events
 
@@ -119,6 +126,10 @@ public class PuzzleGrid : MonoBehaviour
 
         // Start Music
         GameAssets.Sound.StoneRock.Play();
+
+        // Set initial mana values
+        SetInitialMana();
+
     }
 
     void FixedUpdate()
@@ -184,31 +195,88 @@ public class PuzzleGrid : MonoBehaviour
 
     }
 
+    private void SetInitialMana()
+    {
+
+        SetMana(0f, Spell.Element.Air);
+        SetMana(0f, Spell.Element.Earth);
+        SetMana(0f, Spell.Element.Fire);
+        SetMana(0f, Spell.Element.Water);
+
+    }
+
+    private float GetManaByElement(Spell.Element _ManaElement)
+    {
+        switch (_ManaElement)
+        {
+            case Spell.Element.Air:
+                return AirMana;
+            case Spell.Element.Water:
+                return WaterMana;
+            case Spell.Element.Fire:
+                return FireMana;
+            case Spell.Element.Earth:
+                return EarthMana;
+            default:
+                Debug.LogError("Unrecognized Mana Type Requested.");
+                return 0;
+        }
+    }
+
+    private Spell GetSpellByElement(Spell.Element _ManaElement)
+    {
+        switch (_ManaElement)
+        {
+            case Spell.Element.Air:
+                return AirSpell;
+            case Spell.Element.Water:
+                return WaterSpell;
+            case Spell.Element.Fire:
+                return FireSpell;
+            case Spell.Element.Earth:
+                return EarthSpell;
+            default:
+                Debug.LogError("Unrecognized Spell Type Requested.");
+                return AirSpell;
+        }
+    }
+
+
     private void ProcessSpellInputs()
     {
+
+        Spell.Element? SpellElement = null;
 
         if (EarthInputFlag)
         {
             EarthInputFlag = false;
-            ExecuteSpell(EarthSpell);
+            SpellElement = Spell.Element.Earth;
         }
-
-        if (WaterInputFlag)
+        else if (WaterInputFlag)
         {
             WaterInputFlag = false;
-            ExecuteSpell(WaterSpell);
+            SpellElement = Spell.Element.Water;
         }
-
-        if (FireInputFlag)
+        else if (FireInputFlag)
         {
             FireInputFlag = false;
-            ExecuteSpell(FireSpell);
+            SpellElement = Spell.Element.Fire;
         }
-
-        if (AirInputFlag)
+        else if (AirInputFlag)
         {
             AirInputFlag = false;
-            ExecuteSpell(AirSpell);
+            SpellElement = Spell.Element.Air;
+        }
+
+        if (SpellElement == null) return;
+
+        Spell SpellUsed = GetSpellByElement((Spell.Element) SpellElement);
+        float SpellMana = GetManaByElement((Spell.Element) SpellElement);
+
+        if(SpellMana == MaxMana)
+        {
+            ExecuteSpell(SpellUsed);
+            SetMana(0f, (Spell.Element) SpellElement);
         }
 
     }
@@ -605,6 +673,10 @@ public class PuzzleGrid : MonoBehaviour
             }
         }
 
+        // Combo and Chain Color Hashes
+        HashSet<BasicTile.TileColor> ClearColors = new HashSet<BasicTile.TileColor>();
+
+
         // Iterate over color map for matches to add to HashSet
         HashSet<Vector2Int> ClearedCoordinatesHash = new HashSet<Vector2Int>();
         for (int j = CEILING_ROW; j >= FLOOR_ROW; j--)
@@ -620,6 +692,7 @@ public class PuzzleGrid : MonoBehaviour
                         ClearedCoordinatesHash.Add(new Vector2Int(i, j - 0));
                         ClearedCoordinatesHash.Add(new Vector2Int(i, j - 1));
                         ClearedCoordinatesHash.Add(new Vector2Int(i, j - 2));
+                        ClearColors.Add((BasicTile.TileColor) OriginColor);
                     }
                 }
                 if (i < GridSize.x - 2)
@@ -629,6 +702,7 @@ public class PuzzleGrid : MonoBehaviour
                         ClearedCoordinatesHash.Add(new Vector2Int(i + 0, j));
                         ClearedCoordinatesHash.Add(new Vector2Int(i + 1, j));
                         ClearedCoordinatesHash.Add(new Vector2Int(i + 2, j));
+                        ClearColors.Add((BasicTile.TileColor)OriginColor);
                     }
                 }
             }
@@ -680,6 +754,29 @@ public class PuzzleGrid : MonoBehaviour
                 if (ClearedCoordinatesList.Count > 3) ComboOffset = new Vector2(0f, 1f);
 
                 Counter.StartEffect(TechCounter.TechType.Chain, ChainLevel + 1, (Vector2)FirstTile.GetWorldPosition() + ComboOffset + new Vector2(0.5f, 0.75f));
+
+                // Add Mana for each color type
+                foreach(BasicTile.TileColor _TileColor in ClearColors)
+                {
+                    switch (_TileColor)
+                    {
+                        case BasicTile.TileColor.Blue:
+                        case BasicTile.TileColor.Red:
+                        case BasicTile.TileColor.Yellow:
+                        case BasicTile.TileColor.Purple:
+                            ChangeMana(ChainLevel * ClearedCoordinatesList.Count, ConvertColorToMana(_TileColor));
+                            break;
+                        case BasicTile.TileColor.Indigo:
+                            break;
+                        case BasicTile.TileColor.Green:
+                            break;
+                        default:
+                            Debug.LogError("Unrecognized color chained.");
+                            break;
+
+                    }
+                }
+
             }
 
                 // Create Clear Set (Is this necessary?)
@@ -689,6 +786,94 @@ public class PuzzleGrid : MonoBehaviour
 
         }
     }
+
+    Spell.Element ConvertColorToMana(BasicTile.TileColor _TileColor)
+    {
+        switch (_TileColor)
+        {
+            case BasicTile.TileColor.Blue:
+                return Spell.Element.Water;
+            case BasicTile.TileColor.Red:
+                return Spell.Element.Fire;
+            case BasicTile.TileColor.Yellow:
+                return Spell.Element.Air;
+            case BasicTile.TileColor.Purple:
+                return Spell.Element.Earth;
+            default:
+                Debug.LogError("Color to mana requested on an invalid color");
+                return Spell.Element.Air;
+        }
+    }
+
+    void ChangeMana(float _ManaDelta, Spell.Element _SpellElement)
+    {
+        SetMana(Mathf.Clamp(GetManaByElement(_SpellElement) + _ManaDelta, 0f, MaxMana), _SpellElement);
+    }
+
+    void SetMana(float _ManaSet, Spell.Element _SpellElement)
+    {
+
+        Transform MeterTransform;
+        Transform FillTransform;
+        float MinPosition;
+        float MaxPosition;
+
+        switch (_SpellElement)
+        {
+            case Spell.Element.Water:
+                WaterMana = _ManaSet;
+                MeterTransform = CursorObject.transform.Find("Water Meter Mask");
+                FillTransform = CursorObject.transform.Find("Water Cursor Fill");
+                MinPosition = 2.569f;
+                MaxPosition = 1.765f;
+                break;
+            case Spell.Element.Fire:
+                FireMana = _ManaSet;
+                MeterTransform = CursorObject.transform.Find("Fire Meter Mask");
+                FillTransform = CursorObject.transform.Find("Fire Cursor Fill");
+                MinPosition = 2.569f;
+                MaxPosition = 1.765f;
+                break;
+            case Spell.Element.Air:
+                AirMana = _ManaSet;
+                MeterTransform = CursorObject.transform.Find("Air Meter Mask");
+                FillTransform = CursorObject.transform.Find("Air Cursor Fill");
+                MinPosition = -0.57f;
+                MaxPosition = 0.229f;
+                break;
+            case Spell.Element.Earth:
+                EarthMana = _ManaSet;
+                MeterTransform = CursorObject.transform.Find("Earth Meter Mask");
+                FillTransform = CursorObject.transform.Find("Earth Cursor Fill");
+                MinPosition = -0.57f;
+                MaxPosition = 0.229f;
+                break;
+            default:
+                Debug.LogError("Unrecognized element mana set.");
+                MeterTransform = CursorObject.transform.Find("Water Meter Mask");
+                FillTransform = CursorObject.transform.Find("Water Cursor Fill");
+                MinPosition = 0;
+                MaxPosition = 0;
+                break;
+
+        }
+
+        // Translate sprite mask for meter
+        MeterTransform.localPosition = new Vector3(MinPosition + _ManaSet / MaxMana * (MaxPosition - MinPosition), MeterTransform.localPosition.y);
+        
+        // Set sprite brightness
+        if (_ManaSet == MaxMana)
+        {
+            FillTransform.GetComponent<SpriteRenderer>().color = Color.white;
+        }
+        else
+        {
+            FillTransform.GetComponent<SpriteRenderer>().color = Color.grey;
+        }
+
+    }
+
+
 
     /// <summary>
     /// Determines when the current chain has ended. Resets chain level to 0 if so.
