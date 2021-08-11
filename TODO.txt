@@ -1,15 +1,11 @@
 Done:
+Added crude leveling pathfinder function.
+Add final backup command to boost if there is nothing to do.
 
-Moved AI pathfinding functions to AIActions class from PuzzleGrid. Minor accessibility changes were needed for it to function this way.
 
-Added horizontal single-switch pathfind.
-
-Removed Stamina features
 
 TODO:
-Update AIActions target coordinates during switching
-Make pathfinding treat clearing tiles as non-targets
-Add more pathfinding functions:
-- Single horizontal switch
+Add back up pathfind for leveling the tiles
 
 OBSERVATIONS:
+The AI on leveling needs to make sure there is a valid tile to move to actually perform the leveling. It constantly switching empty spaces is causing issues

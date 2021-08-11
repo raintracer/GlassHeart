@@ -62,7 +62,7 @@ public class PuzzleGrid : MonoBehaviour
     private const int FAST_SCROLL_FRAMES = 10;
     private const int DANGER_ROW = 11;
     private const int BLOCK_SPAWN_ROW = 14;
-    private const float SCROLL_SPEED_BASE = 1f;
+    private const float SCROLL_SPEED_BASE = 0.1f;
 
     // Player properties
     private float MaxHealth = 10f;
@@ -874,6 +874,22 @@ public class PuzzleGrid : MonoBehaviour
             }
         }
 
+        if (AIActions.Count == 0)
+        {
+            // Look for leveling swap
+            AIAction SearchResult = AIAction.FindLevelingSwap(this);
+            if (SearchResult != null)
+            {
+                AIActions.Add(SearchResult);
+            }
+        }
+
+        if (AIActions.Count == 0)
+        {
+            // As a final option, boost to get more tiles to work with
+            AIActions.Add(new AIAction(AIAction.ActionType.ScrollBoost, Vector2Int.zero, false, false));
+        }
+
 
         // Limit the AI acting speed
         AIActionDelayTimer += Time.fixedDeltaTime;
@@ -890,6 +906,18 @@ public class PuzzleGrid : MonoBehaviour
             
             // Refer to the next TargetAction
             AIAction TargetAction = AIActions[0];
+
+            // Special check for scroll boost input
+            if(TargetAction.Action == AIAction.ActionType.ScrollBoost)
+            {
+                ScrollBoostInput = true;
+                AIActions.RemoveAt(0);
+                return;
+            }
+            else
+            {
+                ScrollBoostInput = false;
+            }
 
             // If at the target coordinate, perform the action
             if (CursorPosition == TargetAction.TargetCoordinate)

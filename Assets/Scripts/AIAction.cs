@@ -200,4 +200,68 @@ public class AIAction
 
     }
 
+    static public AIAction FindLevelingSwap(PuzzleGrid Grid)
+    {
+
+        Vector2Int GridSize = Grid.GridSize;
+        bool SwapFound = false;
+        Vector2Int SwapCoordinate = Vector2Int.down;
+
+        for (int i = 0; i < GridSize.x; i++)
+        {
+
+            for (int j = PuzzleGrid.FLOOR_ROW; j <= PuzzleGrid.CEILING_ROW; j++)
+            {
+
+                // Check for the tile to be empty
+                Vector2Int _TileCoordinate = new Vector2Int(i, j);
+                Griddable _Tile = Grid.GetTileByGridCoordinate(_TileCoordinate);
+                if (_Tile != null) continue;
+
+                // Check for a horizontal neighbor that has a tile above it to the left
+                Vector2Int CheckCoordinate = _TileCoordinate + Vector2Int.left + Vector2Int.up;
+                if (CheckCoordinate.x >= 0)
+                {
+                    Griddable _CheckTileA = Grid.GetTileByGridCoordinate(CheckCoordinate);
+                    Griddable _CheckTileB = Grid.GetTileByGridCoordinate(CheckCoordinate + Vector2Int.down);
+                    if (_CheckTileA != null && _CheckTileA.IsSet() && _CheckTileB != null && _CheckTileB.IsSet())
+                    {
+                        SwapFound = true;
+                        SwapCoordinate = _TileCoordinate + Vector2Int.left;
+                        break;
+                    }
+                }
+
+                // If the left check failed, try again on the right side
+                CheckCoordinate = _TileCoordinate + Vector2Int.right + Vector2Int.up;
+                if (CheckCoordinate.x < GridSize.x)
+                {
+                    Griddable _CheckTileA = Grid.GetTileByGridCoordinate(CheckCoordinate);
+                    Griddable _CheckTileB = Grid.GetTileByGridCoordinate(CheckCoordinate + Vector2Int.down);
+                    if (_CheckTileA != null && _CheckTileA.IsSet() && _CheckTileB != null && _CheckTileB.IsSet())
+                    {
+                        SwapFound = true;
+                        SwapCoordinate = _TileCoordinate;
+                        break;
+                    }
+                }
+
+            }
+
+            if (SwapFound) break;
+
+        }
+
+        // If a swap was found, return the appropriate Swap Action object
+        if (SwapFound)
+        {
+            AIAction SwapAction = new AIAction(ActionType.Swap, SwapCoordinate);
+            return SwapAction;
+        }
+
+        // If no swap was found, return null
+        return null;
+
+    }
+
 }
