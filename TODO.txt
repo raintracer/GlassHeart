@@ -1,11 +1,8 @@
 Done:
-Added crude leveling pathfinder function.
-Add final backup command to boost if there is nothing to do.
 
 
 
 TODO:
-Add back up pathfind for leveling the tiles
+Block spawning on enemies (Simple)
 
 OBSERVATIONS:
-The AI on leveling needs to make sure there is a valid tile to move to actually perform the leveling. It constantly switching empty spaces is causing issues

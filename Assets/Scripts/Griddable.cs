@@ -95,6 +95,11 @@ public abstract class Griddable
         return GO.transform.position;
     }
 
+    static public int GetSwapFrames()
+    {
+        return SWAP_FRAMES;
+    }
+
     public bool IsSet()
     {
         return (state == Griddable.State.Set);

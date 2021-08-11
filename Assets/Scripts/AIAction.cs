@@ -9,9 +9,11 @@ public class AIAction
     public bool ColumnMatters;
     public bool RowMatters;
     public Vector2Int TargetCoordinate;
+    public string PathFinderSignature = "";
 
-    public AIAction(ActionType _Action, Vector2Int _TargetCoordinate, bool _ColumnMatters = true, bool _RowMatters = true)
+    public AIAction(string _PathFinderSignature, ActionType _Action, Vector2Int _TargetCoordinate, bool _ColumnMatters = true, bool _RowMatters = true)
     {
+        PathFinderSignature = _PathFinderSignature;
         Action = _Action;
         TargetCoordinate = _TargetCoordinate;
         ColumnMatters = _ColumnMatters;
@@ -106,7 +108,7 @@ public class AIAction
         // If a swap was found, return the appropriate Swap Action object
         if (SwapFound)
         {
-            AIAction SwapAction = new AIAction(ActionType.Swap, SwapCoordinate);
+            AIAction SwapAction = new AIAction(nameof(FindVerticalSingleSwitchMatch), ActionType.Swap, SwapCoordinate);
             return SwapAction;
         }
 
@@ -191,7 +193,7 @@ public class AIAction
         // If a swap was found, return the appropriate Swap Action object
         if (SwapFound)
         {
-            AIAction SwapAction = new AIAction(ActionType.Swap, SwapCoordinate);
+            AIAction SwapAction = new AIAction(nameof(FindHorizontalSingleSwitchMatch), ActionType.Swap, SwapCoordinate);
             return SwapAction;
         }
 
@@ -200,7 +202,7 @@ public class AIAction
 
     }
 
-    static public AIAction FindLevelingSwap(PuzzleGrid Grid)
+    static public AIAction FindLevelingSwapCrude(PuzzleGrid Grid)
     {
 
         Vector2Int GridSize = Grid.GridSize;
@@ -255,7 +257,144 @@ public class AIAction
         // If a swap was found, return the appropriate Swap Action object
         if (SwapFound)
         {
-            AIAction SwapAction = new AIAction(ActionType.Swap, SwapCoordinate);
+            AIAction SwapAction = new AIAction(nameof(FindLevelingSwapCrude), ActionType.Swap, SwapCoordinate);
+            return SwapAction;
+        }
+
+        // If no swap was found, return null
+        return null;
+
+    }
+
+    static public AIAction FindLevelingSwap(PuzzleGrid Grid)
+    {
+
+        Vector2Int GridSize = Grid.GridSize;
+        bool SwapFound = false;
+        Vector2Int SwapCoordinate = Vector2Int.down;
+
+        // Organize Columns by the Highest Swappable Tile
+        List<int> ColumnIndices = new List<int>();
+        for (int i = 0; i < GridSize.x; i++) ColumnIndices.Add(i);
+        ColumnIndices.Sort(Grid.CompareColumnsByHighestSwappableTileAscending);
+
+        // Iterate through the columns in preferred order
+        for (int i = 0; i < GridSize.x; i++)
+        {
+
+            // Tracks the current x position and swappable height
+            int Column = ColumnIndices[i];
+            int ColumnHeight = Grid.GetColumnHeightFromSwappableTiles(Column);
+            
+            // If the height is zero, all viable options have been checked
+            if (ColumnHeight == 0) break;
+
+            // Iterate from the floor row to the column height
+            for (int j = PuzzleGrid.FLOOR_ROW; j <= PuzzleGrid.FLOOR_ROW + ColumnHeight; j++)
+            {
+
+                // If the tile is not the highest, it can be rejected into any empty space to lower the column
+                if (j < PuzzleGrid.FLOOR_ROW + ColumnHeight)
+                {
+
+                    // Check for the tile on the left side to be empty
+                    Vector2Int _TileCoordinate = new Vector2Int(Column, j) + Vector2Int.left;
+                    if (_TileCoordinate.x >= 0)
+                    {
+                        Griddable _Tile = Grid.GetTileByGridCoordinate(_TileCoordinate);
+                        if (_Tile == null)
+                        {
+                            SwapFound = true;
+                            SwapCoordinate = _TileCoordinate;
+                        }
+                    }
+                    if (SwapFound == true) break;
+
+                    // If the left check fails, try on the right
+                    _TileCoordinate = new Vector2Int(Column, j) + Vector2Int.right;
+                    if (_TileCoordinate.x < GridSize.x)
+                    {
+                        Griddable _Tile = Grid.GetTileByGridCoordinate(_TileCoordinate);
+                        if (_Tile == null)
+                        {
+                            SwapFound = true;
+                            SwapCoordinate = _TileCoordinate + Vector2Int.left;
+                        }
+                    }
+                    if (SwapFound == true) break;
+                }
+                // If not found, and the tile is the highest swappable tile in the column, check multi-switch solutions
+                else
+                {
+
+                    // Search on either side for a tile to reject to. There must be an empty tile on the same row with another empty tile on the row below it
+                    bool[] DirectionViable = new bool[2] { false, false };
+                    int[] DirectionDistance = new int[2] { 0, 0 };
+                    int[] Direction = new int[2] {-1, 1};
+
+                    // Search each direction
+                    for (int k = 0; k <= 1; k++)
+                    {
+                        //Go until a block is in the way, or the swap direction is viable
+                        for (int w = Column + Direction[k]; w >= 0 && w < GridSize.x; w += Direction[k])
+                        {
+                            
+                            Vector2Int _CheckCoordinate = new Vector2Int(w, j);
+
+                            // Give up on the current direction if it is blocked
+                            if (Grid.CoordinateContainsAnyTile(_CheckCoordinate)) break;
+
+                            if (!Grid.CoordinateIsSupported(_CheckCoordinate))
+                            {
+                                DirectionViable[k] = true;
+                                DirectionDistance[k] = Mathf.Abs(Column - w);
+                                break;
+                            }
+
+                        }
+                    }
+
+                    // If neither direction is viable, give up on this column
+                    if (!DirectionViable[0] && !DirectionViable[1]) break;
+
+                    // Prepare to select a direction
+                    Vector2Int SelectedOffset = Vector2Int.zero;
+
+                    // If both directions are viable, compare their distance, prefer left in case of a tie
+                    if(DirectionViable[0] && DirectionViable[1])
+                    {
+                        if (DirectionDistance[0] <= DirectionDistance[1])
+                        {
+                            SelectedOffset = Vector2Int.left; // Select Left
+                        }
+                        else
+                        {
+                            SelectedOffset = Vector2Int.zero; // Select Right
+                        }
+                    } else if (DirectionViable[0])
+                    {
+                        SelectedOffset = Vector2Int.left; // Select Left
+                    }
+                    else
+                    {
+                        SelectedOffset = Vector2Int.zero; // Select Right
+                    }
+
+                    SwapFound = true;
+                    SwapCoordinate = new Vector2Int(Column, j) + SelectedOffset;
+
+                }
+
+            }
+
+            if (SwapFound) break;
+
+        }
+
+        // If a swap was found, return the appropriate Swap Action object
+        if (SwapFound)
+        {
+            AIAction SwapAction = new AIAction(nameof(FindLevelingSwap), ActionType.Swap, SwapCoordinate);
             return SwapAction;
         }
 

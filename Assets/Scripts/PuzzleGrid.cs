@@ -637,6 +637,7 @@ public class PuzzleGrid : MonoBehaviour
             // Temporary - Remove Cleared Coordinates and check for chain
             int ListCount = ClearedCoordinatesList.Count;
             bool Chained = false;
+            bool Combo = false;
 
             for (int i = 0; i < ListCount; i++)
             {
@@ -651,6 +652,7 @@ public class PuzzleGrid : MonoBehaviour
             // Check for Combo
             if (ClearedCoordinatesList.Count > 3)
             {
+                Combo = true;
                 GameAssets.Sound.Combo1.Play();
                 GameObject CounterObject = Instantiate(Resources.Load<GameObject>("TechCounterObject"));
                 TechCounter Counter = CounterObject.GetComponent<TechCounter>();
@@ -697,10 +699,19 @@ public class PuzzleGrid : MonoBehaviour
 
             }
 
-                // Create Clear Set (Is this necessary?)
-                // ClearSets.Add(new ClearSet(ClearedCoordinatesList));
+            // Temporary - Send a block to opponent if either a chain or combo was made
+            if (Combo || Chained)
+            {
+                if(OpponentGrid != null)
+                {
+                    OpponentGrid.QueueBlock(new Vector2Int(6, 1));
+                }
+            }
 
-                ClearedCoordinatesHash.Clear();
+            // Create Clear Set (Is this necessary?)
+            // ClearSets.Add(new ClearSet(ClearedCoordinatesList));
+
+            ClearedCoordinatesHash.Clear();
 
         }
     }
@@ -853,8 +864,18 @@ public class PuzzleGrid : MonoBehaviour
     private void ProcessAI()
     {
 
+        // Limit the AI acting and thinking speed
+        AIActionDelayTimer += Time.fixedDeltaTime;
+        if (AIActionDelayTimer < AIActionDelay)
+        {
+            Movement = Vector2.zero;
+            CusorSwitchFlag = false;
+            return;
+        }
+        AIActionDelayTimer -= AIActionDelay;
+
         // If there is no target action, search for one
-        if(AIActions.Count == 0)
+        if (AIActions.Count == 0)
         {
             // Look for vertical one-switch matches
             AIAction SearchResult = AIAction.FindVerticalSingleSwitchMatch(this);
@@ -887,28 +908,18 @@ public class PuzzleGrid : MonoBehaviour
         if (AIActions.Count == 0)
         {
             // As a final option, boost to get more tiles to work with
-            AIActions.Add(new AIAction(AIAction.ActionType.ScrollBoost, Vector2Int.zero, false, false));
+            AIActions.Add(new AIAction("Default Boost", AIAction.ActionType.ScrollBoost, Vector2Int.zero, false, false));
         }
-
-
-        // Limit the AI acting speed
-        AIActionDelayTimer += Time.fixedDeltaTime;
-        if (AIActionDelayTimer < AIActionDelay)
-        {
-            Movement = Vector2.zero;
-            CusorSwitchFlag = false;
-            return;
-        }
-        AIActionDelayTimer -= AIActionDelay;
 
         if (AIActions.Count > 0)
         {
             
             // Refer to the next TargetAction
             AIAction TargetAction = AIActions[0];
+            transform.Find("ChainLevelText").GetComponent<TextMeshPro>().text = AIActions[0].PathFinderSignature;
 
             // Special check for scroll boost input
-            if(TargetAction.Action == AIAction.ActionType.ScrollBoost)
+            if (TargetAction.Action == AIAction.ActionType.ScrollBoost)
             {
                 ScrollBoostInput = true;
                 AIActions.RemoveAt(0);
@@ -919,11 +930,19 @@ public class PuzzleGrid : MonoBehaviour
                 ScrollBoostInput = false;
             }
 
-            // If at the target coordinate, perform the action
+            // If at the target coordinate, try to perform the action
             if (CursorPosition == TargetAction.TargetCoordinate)
             {
-                CusorSwitchFlag = true;
-                AIActions.RemoveAt(0);
+                if (AIActions[0].Action == AIAction.ActionType.Swap)
+                {
+
+                    CusorSwitchFlag = true;
+                    AIActions.RemoveAt(0);
+
+                    // On a swap, stun the AI for the length of the swap animation frames
+                    AIActionDelayTimer = -Griddable.GetSwapFrames() * Time.fixedDeltaTime;
+
+                }
             }
             // Otherwise move towards the target
             else if (CursorPosition.x < TargetAction.TargetCoordinate.x)
@@ -945,10 +964,8 @@ public class PuzzleGrid : MonoBehaviour
 
         }
         
-
     }
 
-    
 
     #endregion
 
@@ -1218,11 +1235,38 @@ public class PuzzleGrid : MonoBehaviour
         return GetTileByGridCoordinate(new Vector2Int(GridCoordinateX, GridCoordinateY));
     }
 
-    private int CompareFreeTileHeightAscending(int TileAID, int TileBID)
+    public int CompareFreeTileHeightAscending(int TileAID, int TileBID)
     {
         float TileAY = GetTileByID(TileAID).GridPosition.y;
         float TileBY = GetTileByID(TileBID).GridPosition.y;
         return TileBY.CompareTo(TileAY);
+    }
+
+    public int GetColumnHeightFromSwappableTiles(int ColumnIndex)
+    {
+
+        int ColumnHeight = -1;
+        for (int k = 0; k <= CEILING_ROW - FLOOR_ROW; k++)
+        {
+            Vector2Int _Coordinate = new Vector2Int(ColumnIndex, k + FLOOR_ROW);
+            Griddable _Tile = GetTileByGridCoordinate(_Coordinate);
+            if (_Tile == null || !_Tile.SwappingAllowed()) break;
+            ColumnHeight = k;
+        }
+
+        return ColumnHeight;
+
+    }
+
+    public int CompareColumnsByHighestSwappableTileAscending(int ColumnA, int ColumnB)
+    {
+
+        int HeightA = GetColumnHeightFromSwappableTiles(ColumnA);
+        int HeightB = GetColumnHeightFromSwappableTiles(ColumnB);
+
+        // Return the height comparison
+        return HeightB.CompareTo(HeightA);
+
     }
 
     Griddable GetTileByID(int TileKey)
@@ -1410,6 +1454,12 @@ public class PuzzleGrid : MonoBehaviour
             if (TileGrid[i, RowIndex] != 0) return true;
         }
         return false;
+    }
+
+
+    public bool CoordinateContainsAnyTile(Vector2Int _GridCoordinate)
+    {
+        return CoordinateContainsLockedTile(_GridCoordinate) || CoordinateContainsFreeTile(_GridCoordinate);
     }
 
     private bool CoordinateContainsLockedTile(Vector2Int _GridCoordinate)
