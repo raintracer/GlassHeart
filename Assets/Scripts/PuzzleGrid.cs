@@ -49,6 +49,12 @@ public class PuzzleGrid : MonoBehaviour
     private bool AirInputFlag = false;
     private bool EarthInputFlag = false;
 
+    // AI Fields
+    [SerializeField] private bool AIControlled;
+    float AIActionDelay = 0.1f;
+    float AIActionDelayTimer = 0f;
+    List<AIAction> AIActions = new List<AIAction>();
+
     // Constants
     private const int CEILING_ROW = 13;
     private const int FLOOR_ROW = 2;
@@ -56,7 +62,7 @@ public class PuzzleGrid : MonoBehaviour
     private const int FAST_SCROLL_FRAMES = 10;
     private const int DANGER_ROW = 11;
     private const int BLOCK_SPAWN_ROW = 14;
-    private const float SCROLL_SPEED_BASE = 0.1f;
+    private const float SCROLL_SPEED_BASE = 1f;
 
     // Player properties
     private float MaxHealth = 10f;
@@ -64,6 +70,10 @@ public class PuzzleGrid : MonoBehaviour
     private float MaxStamina = 3f;
     private float Stamina = 3f;
     private float StopTime = 0f;
+
+    // Opponent Fields
+    [SerializeField] GameObject OpponentGridObject;
+    PuzzleGrid OpponentGrid;
 
     // Rendering fields
 
@@ -110,17 +120,31 @@ public class PuzzleGrid : MonoBehaviour
         CursorObject = Instantiate(Resources.Load<GameObject>("PuzzleCursorPrefab"), transform);
         UpdateCursorPosition();
 
+        // Initialize Opponent Grid
+        if (OpponentGridObject == null)
+        {
+            OpponentGrid = null;
+        }
+        else
+        {
+            OpponentGrid = OpponentGridObject.GetComponent<PuzzleGrid>();
+            if (OpponentGrid == null) Debug.LogError("Opponent grid object does not have the required PuzzleGrid component.");
+        }
+
         // Initialize controls
-        Inputs = new ControlMap();
-        Inputs.Enable();
-        Inputs.Player.MoveCursor.performed += ctx => Movement = ctx.ReadValue<Vector2>();
-        Inputs.Player.SwitchAtCursor.started += ctx => CusorSwitchFlag = true;
-        Inputs.Player.ScrollBoost.performed += ctx => ScrollBoostInput = true;
-        Inputs.Player.ScrollBoost.canceled += ctx => ScrollBoostInput = false;
-        Inputs.Player.CastAir.canceled += ctx => AirInputFlag = true;
-        Inputs.Player.CastEarth.canceled += ctx => EarthInputFlag = true;
-        Inputs.Player.CastFire.canceled += ctx => FireInputFlag = true;
-        Inputs.Player.CastWater.canceled += ctx => WaterInputFlag = true;
+        if (!AIControlled)
+        {
+            Inputs = new ControlMap();
+            Inputs.Enable();
+            Inputs.Player.MoveCursor.performed += ctx => Movement = ctx.ReadValue<Vector2>();
+            Inputs.Player.SwitchAtCursor.started += ctx => CusorSwitchFlag = true;
+            Inputs.Player.ScrollBoost.performed += ctx => ScrollBoostInput = true;
+            Inputs.Player.ScrollBoost.canceled += ctx => ScrollBoostInput = false;
+            Inputs.Player.CastAir.canceled += ctx => AirInputFlag = true;
+            Inputs.Player.CastEarth.canceled += ctx => EarthInputFlag = true;
+            Inputs.Player.CastFire.canceled += ctx => FireInputFlag = true;
+            Inputs.Player.CastWater.canceled += ctx => WaterInputFlag = true;
+        }
 
         // Instantiate tile screen (acts as a sprite mask for the tiles)
         TileScreenObject = Instantiate(Resources.Load<GameObject>("TileScreen"), transform);
@@ -135,6 +159,12 @@ public class PuzzleGrid : MonoBehaviour
 
     void FixedUpdate()
     {
+
+        // Process AI Control
+        if (AIControlled)
+        {
+            ProcessAI();
+        }
 
         // Check the block queue for a valid spawn
         ProcessBlockQueue();
@@ -850,6 +880,164 @@ public class PuzzleGrid : MonoBehaviour
 
     #endregion
 
+    #region AI Control Methods
+
+    private void ProcessAI()
+    {
+
+        // If there is no target action, search for one
+        if(AIActions.Count == 0)
+        {
+            // Look for vertical one-switch matches
+            AIAction SearchResult = AI_FindVerticalSingleSwitchMatch();
+            if (SearchResult != null)
+            {
+                AIActions.Add(SearchResult);
+            }
+        }
+
+        // Limit the AI acting speed
+        AIActionDelayTimer += Time.fixedDeltaTime;
+        if (AIActionDelayTimer < AIActionDelay)
+        {
+            Movement = Vector2.zero;
+            CusorSwitchFlag = false;
+            return;
+        }
+        AIActionDelayTimer -= AIActionDelay;
+
+        if (AIActions.Count > 0)
+        {
+            
+            // Refer to the next TargetAction
+            AIAction TargetAction = AIActions[0];
+
+            // If at the target coordinate, perform the action
+            if (CursorPosition == TargetAction.TargetCoordinate)
+            {
+                CusorSwitchFlag = true;
+                AIActions.RemoveAt(0);
+            }
+            // Otherwise move towards the target
+            else if (CursorPosition.x < TargetAction.TargetCoordinate.x)
+            {
+                Movement = Vector2.right;
+            }
+            else if (CursorPosition.x > TargetAction.TargetCoordinate.x)
+            {
+                Movement = Vector2.left;
+            }
+            else if (CursorPosition.y < TargetAction.TargetCoordinate.y)
+            {
+                Movement = Vector2.up;
+            }
+            else if (CursorPosition.y > TargetAction.TargetCoordinate.y)
+            {
+                Movement = Vector2.down;
+            }
+
+        }
+        
+
+    }
+
+    private AIAction AI_FindVerticalSingleSwitchMatch()
+    {
+
+        bool SwapFound = false;
+        Vector2Int SwapCoordinate = Vector2Int.down;
+
+        for (int i = 0; i < GridSize.x; i++)
+        {
+
+            for (int j = FLOOR_ROW + 2; j <= CEILING_ROW; j++)
+            {
+
+                // Look for three tiles to be present
+                BasicTile[] CheckTiles = new BasicTile[3];
+                bool SearchFailed = false;
+
+                for (int k = 0; k < 3; k++)
+                {
+                    CheckTiles[k] = GetTileByGridCoordinate(i, j - k) as BasicTile;
+                    if (CheckTiles[k] == null) {
+                        SearchFailed = true;
+                        break;
+                    }
+                }
+
+                if (SearchFailed) continue;
+
+                // Determine if there is at least two matching colors
+                bool[] ColorMatches = new bool[3];
+                Vector2Int[] IndexPairs = new Vector2Int[3] { new Vector2Int(0, 1), new Vector2Int(0, 2), new Vector2Int(1, 2) };
+                BasicTile.TileColor MatchedColor = BasicTile.TileColor.Blue;
+
+                foreach (Vector2Int IndexPair in IndexPairs)
+                {
+                    if (CheckTiles[IndexPair.x].Color == CheckTiles[IndexPair.y].Color)
+                    {
+                        ColorMatches[IndexPair.x] = true;
+                        ColorMatches[IndexPair.y] = true;
+                        MatchedColor = CheckTiles[IndexPair.x].Color;
+                        break;
+                    }
+                }
+
+                // Check fails if there is no color match
+                if (ColorMatches[0] == false && ColorMatches[1] == false && ColorMatches[2] == false) continue;
+
+                // If a match is found, determine the failed match coordinate
+                Vector2Int UnmatchedCoordinate = Vector2Int.zero;
+                for (int k = 0; k < 3; k++)
+                {
+                    if (ColorMatches[k] == false) UnmatchedCoordinate = CheckTiles[k].GridCoordinate;
+                }
+
+                // Check for the correct color on the left side of the unmatched coordinate
+                if(UnmatchedCoordinate.x > 0)
+                {
+                    BasicTile _CheckTile = GetTileByGridCoordinate(UnmatchedCoordinate + Vector2Int.left) as BasicTile;
+                    if (_CheckTile != null && _CheckTile.Color == MatchedColor)
+                    {
+                        SwapFound = true;
+                        SwapCoordinate = UnmatchedCoordinate + Vector2Int.left;
+                        break;
+                    }
+                }
+
+                // If the left check failed, try again on the right side
+                if (UnmatchedCoordinate.x < GridSize.x - 1)
+                {
+                    BasicTile _CheckTile = GetTileByGridCoordinate(UnmatchedCoordinate + Vector2Int.right) as BasicTile;
+                    if (_CheckTile != null && _CheckTile.Color == MatchedColor)
+                    {
+                        SwapFound = true;
+                        SwapCoordinate = UnmatchedCoordinate;
+                        break;
+                    }
+                }
+
+            }
+
+            if (SwapFound) break;
+
+        }
+
+        // If a swap was found, return the appropriate Swap Action object
+        if (SwapFound)
+        {
+            AIAction SwapAction = new AIAction(AIAction.ActionType.Swap, SwapCoordinate);
+            return SwapAction;
+        }
+
+        // If no swap was found, return null
+        return null;
+
+    }
+
+    #endregion
+
     #region Spell Methods
 
     private void SetInitialMana()
@@ -1075,11 +1263,20 @@ public class PuzzleGrid : MonoBehaviour
     #region Tile Methods
     Griddable GetTileByGridCoordinate(Vector2Int GridCoordinate)
     {
+        if (GridCoordinate.x < 0 || GridCoordinate.x >= GridSize.x || GridCoordinate.y < 0 || GridCoordinate.y >= GridSize.y)
+        {
+            Debug.LogError("Out-of-bounds grid coordinate requested: " + GridCoordinate);
+        }
         int TileKey = TileGrid[GridCoordinate.x, GridCoordinate.y];
         return GetTileByID(TileKey);
     }
 
-    private int CompareFreeTileHeightAscending(int TileAID, int TileBID)
+    Griddable GetTileByGridCoordinate(int GridCoordinateX, int GridCoordinateY)
+    {
+        return GetTileByGridCoordinate(new Vector2Int(GridCoordinateX, GridCoordinateY));
+    }
+
+private int CompareFreeTileHeightAscending(int TileAID, int TileBID)
     {
         float TileAY = GetTileByID(TileAID).GridPosition.y;
         float TileBY = GetTileByID(TileBID).GridPosition.y;
