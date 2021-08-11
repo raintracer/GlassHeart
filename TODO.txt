@@ -1,8 +1,15 @@
+Done:
+
+Moved AI pathfinding functions to AIActions class from PuzzleGrid. Minor accessibility changes were needed for it to function this way.
+
+Added horizontal single-switch pathfind.
+
+Removed Stamina features
+
 TODO:
-Improve Tech Counter:
-	Better Sprite and Text
-	Rising Animation
+Update AIActions target coordinates during switching
+Make pathfinding treat clearing tiles as non-targets
+Add more pathfinding functions:
+- Single horizontal switch
 
-
-
-DONE:
+OBSERVATIONS:
