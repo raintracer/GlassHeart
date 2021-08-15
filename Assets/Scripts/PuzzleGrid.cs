@@ -30,6 +30,7 @@ public class PuzzleGrid : MonoBehaviour
     // Clear set logic
     private List<ClearSet> ClearSets = new List<ClearSet>();
     public int ChainLevel { get; private set; } = 0;
+    const int HIGH_CHAIN_LEVEL = 4;
 
     // This collection holds asynchronous update requests to process
     public List<GridRequest> GridRequests = new List<GridRequest>();
@@ -403,10 +404,6 @@ public class PuzzleGrid : MonoBehaviour
             Destroy(gameObject);
         }
 
-        Transform HealthMeterTransform = transform.Find("Health Meter");
-        Transform MeterTransform = HealthMeterTransform.Find("Meter");
-        MeterTransform.localScale = new Vector3(12, 288 * (Health / MaxHealth) );
-
     }
 
     /// <summary>
@@ -644,7 +641,7 @@ public class PuzzleGrid : MonoBehaviour
                 Vector2Int _TileCoordinate = ClearedCoordinatesList[i];
                 Griddable _Tile = GetTileByGridCoordinate(_TileCoordinate);
                 if (_Tile.GetChaining()) Chained = true;
-                _Tile.Clear(i, ListCount);
+                _Tile.Clear(i, ListCount, ChainLevel >= HIGH_CHAIN_LEVEL);
                 GridRequests.Add(new GridRequest { Type = GridRequestType.BlockClear, Coordinate = _TileCoordinate });
                 ClearingTiles.Add(_Tile.KeyID);
             }

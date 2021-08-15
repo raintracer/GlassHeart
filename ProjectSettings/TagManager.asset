@@ -42,6 +42,9 @@ TagManager:
   - name: Default
     uniqueID: 0
     locked: 0
+  - name: TileBackscreen
+    uniqueID: 342345407
+    locked: 0
   - name: TileBackgrounds
     uniqueID: 3923702497
     locked: 0

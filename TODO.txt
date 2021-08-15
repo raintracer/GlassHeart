@@ -1,8 +1,4 @@
 Done:
 
 
-
 TODO:
-Block spawning on enemies (Simple)
-
-OBSERVATIONS:

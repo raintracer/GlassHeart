@@ -80,7 +80,7 @@ public class BlockTile : Griddable
         ParentGrid.DestroyRequest(this, _Chain);
     }
 
-    override protected IEnumerator AnimateClear(int ClearOrder, int ClearTotal) // ClearOrder is the position of this tile in a clear set (zero-indexed), ClearTotal is the total number of tiles in the clear set
+    override protected IEnumerator AnimateClear(int ClearOrder, int ClearTotal, bool HighChain) // ClearOrder is the position of this tile in a clear set (zero-indexed), ClearTotal is the total number of tiles in the clear set
     {
 
         SR_Background.sprite = GameAssets.Sprite.BlockTileSingle;

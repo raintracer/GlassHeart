@@ -56,7 +56,7 @@ public class Block
 
             // Clear each block
             BlockTile _BlockTile = BlockTiles[i];
-            _BlockTile.Clear(i, BlockTiles.Count);
+            _BlockTile.Clear(i, BlockTiles.Count, false);
 
             // Generate a blockclear request at each block
             ParentGrid.GridRequests.Add(new GridRequest { Type = GridRequestType.BlockClear, Coordinate = _BlockTile.GridCoordinate});

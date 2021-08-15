@@ -159,10 +159,10 @@ public abstract class Griddable
         GameObject.Destroy(GO);
     }
 
-    virtual public void Clear(int ClearOrder, int ClearTotal)
+    virtual public void Clear(int ClearOrder, int ClearTotal, bool HighChain)
     {
         state = State.Clearing;
-        ChangeAnimation(Animation.Clear, IntCommand1: ClearOrder, IntCommand2: ClearTotal);
+        ChangeAnimation(Animation.Clear, IntCommand1: ClearOrder, IntCommand2: ClearTotal, BoolCommand: HighChain);
     }
 
     virtual public void Incinerate()
@@ -309,7 +309,7 @@ public abstract class Griddable
                 AnimationRoutine = mono.StartCoroutine(AnimateSwap(BoolCommand));
                 break;
             case Animation.Clear:
-                AnimationRoutine = mono.StartCoroutine(AnimateClear(IntCommand1, IntCommand2));
+                AnimationRoutine = mono.StartCoroutine(AnimateClear(IntCommand1, IntCommand2, BoolCommand));
                 break;
             case Animation.Land:
                 AnimationRoutine = mono.StartCoroutine(AnimateLand());
@@ -374,7 +374,7 @@ public abstract class Griddable
     /// <param name="ClearOrder">The position of the tile in the clear set. (zero-indexed)</param>
     /// <param name="ClearTotal">The total number of the tiles in the clear set.</param>
     /// <returns></returns>
-    virtual protected IEnumerator AnimateClear(int ClearOrder, int ClearTotal)
+    virtual protected IEnumerator AnimateClear(int ClearOrder, int ClearTotal, bool HighComboSound)
     {
 
         // Change material to clearing flash
@@ -396,7 +396,16 @@ public abstract class Griddable
         // Bust
         SR_Background.sprite = null;
         SR_Icon.sprite = null;
-        GameAssets.Sound.DefaultBust.Play();
+
+        // Use default sound unless chain level is high enough
+        if (HighComboSound)
+        {
+            GameAssets.Sound.TileExplode.Play();
+        }
+        else
+        {
+            GameAssets.Sound.DefaultBust.Play();
+        }
 
         // Emit a bust particle
         ParticleController Particles = GameObject.Instantiate(Resources.Load<GameObject>("ParticleController")).GetComponent<ParticleController>();
