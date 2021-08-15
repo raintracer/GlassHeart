@@ -48,8 +48,8 @@ public class BlockTile : Griddable
                 break;
         }
 
-        SR_Background.sprite = BlockSprite;
-        SR_Icon.sprite = null;
+        SR_Background.sprite = null;
+        SR_Icon.sprite = BlockSprite;
 
     }
 
@@ -83,8 +83,8 @@ public class BlockTile : Griddable
     override protected IEnumerator AnimateClear(int ClearOrder, int ClearTotal, bool HighChain) // ClearOrder is the position of this tile in a clear set (zero-indexed), ClearTotal is the total number of tiles in the clear set
     {
 
-        SR_Background.sprite = GameAssets.Sprite.BlockTileSingle;
-        SR_Background.material = GameAssets.Material.ClearingFlash;
+        SR_Icon.sprite = GameAssets.Sprite.BlockTileSingle;
+        SR_Icon.material = GameAssets.Material.ClearingFlash;
 
         // Flash for a set time
         for (int i = 0; i < CLEAR_FLASH_FRAMES; i++)
@@ -93,7 +93,7 @@ public class BlockTile : Griddable
         }
 
         // Wait To Bust
-        SR_Background.material = GameAssets.Material.WaitingToBust;
+        SR_Icon.material = GameAssets.Material.WaitingToBust;
         for (int i = 0; i < (ClearOrder + 1) * CLEAR_BUST_DELAY_FRAMES; i++)
         {
             yield return new WaitForFixedUpdate();
