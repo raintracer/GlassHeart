@@ -104,6 +104,7 @@ public class BlockTile : Griddable
         SR_Background.sprite = GameAssets.GetBackgroundSpriteByTileColor(_TileColor);
         SR_Icon.sprite = GameAssets.GetIconSpriteByTileColor(_TileColor);
         SR_Background.material = GameAssets.Material.Default;
+        SR_Icon.material = GameAssets.Material.Default;
         GameAssets.Sound.DefaultBust.Play();
         ParticleController Particles = GameObject.Instantiate(Resources.Load<GameObject>("ParticleController")).GetComponent<ParticleController>();
         Particles.StartParticle("TilePop", GO.transform.position + new Vector3(0.5f, 0.5f, 0f), 0.5f);
@@ -120,6 +121,17 @@ public class BlockTile : Griddable
         // Request replacement
         ParentGrid.RequestTileReplacement(_TileColor, GridCoordinate, GetChaining());
 
+    }
+
+
+    public override void RequestBounceStart()
+    {
+        // Do nothing
+    }
+
+    public override void RequestBounceStop()
+    {
+        // Do nothing
     }
 
 }

@@ -127,6 +127,9 @@ static public class GameAssets
             ["StoneRock"] = new Sound(GO.AddComponent<AudioSource>(), "StoneRock", 0.5f, true),
             ["Combo1"] = new Sound(GO.AddComponent<AudioSource>(), "Combo1", 0.5f),
             ["TileExplode"] = new Sound(GO.AddComponent<AudioSource>(), "TileExplode", 0.5f),
+            ["Glass Break 1"] = new Sound(GO.AddComponent<AudioSource>(), "Glass/Glass Break 1", 0.5f),
+            ["Glass Break 2"] = new Sound(GO.AddComponent<AudioSource>(), "Glass/Glass Break 2", 0.5f),
+            ["Glass Break Final"] = new Sound(GO.AddComponent<AudioSource>(), "Glass/Glass Break Final", 0.5f)
         };
     }
     public static Sound GetSound(string _SoundName)
@@ -147,6 +150,12 @@ static public class GameAssets
         public static Sound Combo1 { get => GetSound("Combo1"); }
 
         public static Sound TileExplode { get => GetSound("TileExplode"); }
+
+        public static Sound GlassBreak1 { get => GetSound("Glass Break 1"); }
+
+        public static Sound GlassBreak2 { get => GetSound("Glass Break 2"); }
+
+        public static Sound GlassBreakFinal { get => GetSound("Glass Break Final"); }
 
         private AudioSource Source;
         public string ClipName { get; private set; }

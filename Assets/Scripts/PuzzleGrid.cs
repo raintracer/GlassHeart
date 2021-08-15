@@ -57,17 +57,20 @@ public class PuzzleGrid : MonoBehaviour
     List<AIAction> AIActions = new List<AIAction>();
 
     // Constants
-    public const int CEILING_ROW = 13;
+    public int Ceiling_Row = BASE_CEILING_ROW;
+    public const int BASE_CEILING_ROW = 13;
     public const int FLOOR_ROW = 2;
     private const float SCROLL_BOOST_FACTOR = 20f;
     private const int FAST_SCROLL_FRAMES = 10;
     private const int DANGER_ROW = 11;
-    private const int BLOCK_SPAWN_ROW = 14;
+    private const int BLOCK_SPAWN_ROW_OFFSET = 1;
     private const float SCROLL_SPEED_BASE = 0.1f;
 
     // Player properties
-    private float MaxHealth = 10f;
-    private float Health = 10f;
+    private int[] RowHealth = new int[BASE_CEILING_ROW - FLOOR_ROW + 1];
+    private int MaxRowHealth = 100;
+
+
     private float StopTime = 0f;
 
     // Opponent Fields
@@ -153,6 +156,9 @@ public class PuzzleGrid : MonoBehaviour
 
         // Set initial mana values
         SetInitialMana();
+
+        // Set Initial Row Healths
+        for (int i = 0; i < RowHealth.Length; i++) RowHealth[i] = MaxRowHealth;
 
     }
 
@@ -294,11 +300,11 @@ public class PuzzleGrid : MonoBehaviour
             if (!NonblockFalling || HyperBoostTime > 0f)
             {
 
-                if (RowContainsLockedTiles(CEILING_ROW))
+                if (RowContainsLockedTiles(Ceiling_Row))
                 {
 
-                    // If scrolling is otherwise legal but the ceiling row is reached, take damage.
-                    TakeDamage(Time.fixedDeltaTime);
+                    // If scrolling is otherwise legal but the ceiling row is reached, take damage on ALL rows
+                    for (int k = 0; k < RowHealth.Length; k++) TakeDamage(k, 1);
 
                 }
                 else
@@ -396,12 +402,60 @@ public class PuzzleGrid : MonoBehaviour
         transform.Find("ChainLevelText").GetComponent<TextMeshPro>().text = _Level.ToString();
     }
 
-    private void TakeDamage(float _DamageAmount)
+    private void TakeDamageOnTopRow(int _DamageAmount)
     {
-        Health -= _DamageAmount;
-        if(Health < 0)
+        TakeDamage(Ceiling_Row - FLOOR_ROW, _DamageAmount);
+    }
+
+    private void TakeDamage(int RowIndex, int _DamageAmount)
+    {
+
+        // If the row health is already 0 or below, ignore:
+        if (RowHealth[RowIndex] <= 0) return;
+
+
+        // Otherwise, inflict damage
+        int CarryoverDamage = _DamageAmount - RowHealth[RowIndex];
+        RowHealth[RowIndex] -= _DamageAmount;
+
+        // Check if the row is destroyed
+        if(RowHealth[RowIndex] <= 0)
         {
-            Destroy(gameObject);
+
+            // Destroy all tiles on that row
+            for (int i = 0; i < GridSize.x; i++)
+            {
+                new GridRequest { Coordinate = new Vector2Int(i, RowIndex + FLOOR_ROW), Type = GridRequestType.Destroy, Chaining = false };
+            }
+
+            // If this is the above the ceiling row, lower it to this level
+            int New_Ceiling_Row = RowIndex + FLOOR_ROW - 1;
+            if (New_Ceiling_Row <= Ceiling_Row)
+            {
+                Ceiling_Row = New_Ceiling_Row;
+                transform.Find("Dead Frames").localScale = new Vector3(transform.Find("Dead Frames").localScale.x, (BASE_CEILING_ROW - Ceiling_Row) * 24, 0);
+            }
+
+            // Destroy all row above this, recursively
+            if (RowIndex < RowHealth.Length - 1) TakeDamage(RowIndex + 1, RowHealth[RowIndex + 1]);
+
+
+            // Play glass break sound, bigger sound if this is the base row, signifying a loss.
+            if (RowIndex == 0) { 
+                GameAssets.Sound.GlassBreakFinal.Play();
+            }
+            else
+            {
+                GameAssets.Sound.GlassBreak2.Play();
+            }
+
+            // Pass damage to next row?
+            TakeDamage(RowIndex - 1, CarryoverDamage);
+
+        }
+        else
+        {
+            // Glass Tap
         }
 
     }
@@ -571,7 +625,7 @@ public class PuzzleGrid : MonoBehaviour
 
         // Create Nullable Color Map
         BasicTile.TileColor?[,] ColorGrid = new BasicTile.TileColor?[GridSize.x, GridSize.y];
-        for (int j = CEILING_ROW; j >= FLOOR_ROW; j--)
+        for (int j = Ceiling_Row; j >= FLOOR_ROW; j--)
         {
             for (int i = 0; i < GridSize.x; i++)
             {
@@ -594,7 +648,7 @@ public class PuzzleGrid : MonoBehaviour
 
         // Iterate over color map for matches to add to HashSet
         HashSet<Vector2Int> ClearedCoordinatesHash = new HashSet<Vector2Int>();
-        for (int j = CEILING_ROW; j >= FLOOR_ROW; j--)
+        for (int j = Ceiling_Row; j >= FLOOR_ROW; j--)
         {
             for (int i = 0; i < GridSize.x; i++)
             {
@@ -1108,7 +1162,7 @@ public class PuzzleGrid : MonoBehaviour
         if (_Movement.SqrMagnitude() > 0) {
             Vector2Int OldCursorPosition = CursorPosition;
             CursorPosition += new Vector2Int((int)_Movement.x, (int)_Movement.y);
-            CursorPosition.Clamp(new Vector2Int(0, FLOOR_ROW), new Vector2Int(GridSize.x - 2, CEILING_ROW));
+            CursorPosition.Clamp(new Vector2Int(0, FLOOR_ROW), new Vector2Int(GridSize.x - 2, Ceiling_Row));
             UpdateCursorPosition();
             if (!FastScroll && CursorPosition != OldCursorPosition) GameAssets.Sound.CursorClick.Play(); 
         }
@@ -1243,7 +1297,7 @@ public class PuzzleGrid : MonoBehaviour
     {
 
         int ColumnHeight = -1;
-        for (int k = 0; k <= CEILING_ROW - FLOOR_ROW; k++)
+        for (int k = 0; k <= Ceiling_Row - FLOOR_ROW; k++)
         {
             Vector2Int _Coordinate = new Vector2Int(ColumnIndex, k + FLOOR_ROW);
             Griddable _Tile = GetTileByGridCoordinate(_Coordinate);
@@ -1531,7 +1585,7 @@ public class PuzzleGrid : MonoBehaviour
         bool SpawnRowIsClear = true;
         for(int i = 0; i < GridSize.x; i++)
         {
-            if (CoordinateContainsFreeTile(new Vector2Int(i, BLOCK_SPAWN_ROW)) || CoordinateContainsLockedTile(new Vector2Int(i, BLOCK_SPAWN_ROW))) {
+            if (CoordinateContainsFreeTile(new Vector2Int(i, BLOCK_SPAWN_ROW_OFFSET + Ceiling_Row)) || CoordinateContainsLockedTile(new Vector2Int(i, BLOCK_SPAWN_ROW_OFFSET + Ceiling_Row))) {
                 SpawnRowIsClear = false;
                 break;
             }
@@ -1540,7 +1594,7 @@ public class PuzzleGrid : MonoBehaviour
         // If clear, spawn the next block and clear the list entry
         if (SpawnRowIsClear)
         {
-            SpawnBlock(new Vector2(0f, BLOCK_SPAWN_ROW), BlockQueue[0]);
+            SpawnBlock(new Vector2(0f, BLOCK_SPAWN_ROW_OFFSET + Ceiling_Row), BlockQueue[0]);
             BlockQueue.RemoveAt(0);
         }
 
@@ -1633,7 +1687,7 @@ public class PuzzleGrid : MonoBehaviour
         }
 
         // SHIFT CURSOR
-        if (CursorPosition.y < CEILING_ROW) CursorPosition.y += 1;
+        if (CursorPosition.y < Ceiling_Row) CursorPosition.y += 1;
 
         // SHIFT GRID REQUEST REFERENCES
         foreach (GridRequest _GridRequest in GridRequests) _GridRequest.ShiftReference(1);
@@ -1644,6 +1698,8 @@ public class PuzzleGrid : MonoBehaviour
             foreach(AIAction _AIAction in AIActions) _AIAction.TargetCoordinate.y++;
         }
 
+        // Every time you shift grid up, do 5 damage to opponent
+        OpponentGrid.TakeDamageOnTopRow(20);
 
     }
 

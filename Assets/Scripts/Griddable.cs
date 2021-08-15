@@ -202,13 +202,13 @@ public abstract class Griddable
 
     }
 
-    public void RequestBounceStart()
+    public virtual void RequestBounceStart()
     {
         if (state != State.Set) return;
         if (CurentAnimation == Animation.None) ChangeAnimation(Animation.Bounce);
     }
 
-    public void RequestBounceStop()
+    public virtual void RequestBounceStop()
     {
         if (CurentAnimation == Animation.Bounce) ChangeAnimation(Animation.None);
     }

@@ -30,7 +30,7 @@ public class AIAction
         for (int i = 0; i < GridSize.x; i++)
         {
 
-            for (int j = PuzzleGrid.FLOOR_ROW + 2; j <= PuzzleGrid.CEILING_ROW; j++)
+            for (int j = PuzzleGrid.FLOOR_ROW + 2; j <= Grid.Ceiling_Row; j++)
             {
 
                 // Look for three tiles to be present and not clearing
@@ -127,7 +127,7 @@ public class AIAction
         for (int i = 0; i < GridSize.x - 1; i++)
         {
 
-            for (int j = PuzzleGrid.FLOOR_ROW; j <= PuzzleGrid.CEILING_ROW; j++)
+            for (int j = PuzzleGrid.FLOOR_ROW; j <= Grid.Ceiling_Row; j++)
             {
 
                 // Look for two consecutive tiles to be present
@@ -212,7 +212,7 @@ public class AIAction
         for (int i = 0; i < GridSize.x; i++)
         {
 
-            for (int j = PuzzleGrid.FLOOR_ROW; j <= PuzzleGrid.CEILING_ROW; j++)
+            for (int j = PuzzleGrid.FLOOR_ROW; j <= Grid.Ceiling_Row; j++)
             {
 
                 // Check for the tile to be empty
