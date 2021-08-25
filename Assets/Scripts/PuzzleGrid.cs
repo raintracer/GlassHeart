@@ -246,14 +246,17 @@ public class PuzzleGrid : MonoBehaviour
         {
             if (UnlockedTiles.Count != 0)
             {
-                // Sort FreeTiles by grid y position in ascending order
+                
+                // Capture and sort FreeTiles by grid y position in ascending order in a new list
                 List<int> _UnlockedTileTemp = new List<int>(UnlockedTiles);
                 _UnlockedTileTemp.Sort(CompareFreeTileHeightAscending);
+
+
                 for (int i = _UnlockedTileTemp.Count - 1; i >= 0; i--)
                 {
                     int TileKey = _UnlockedTileTemp[i];
                     Griddable _Tile = GetTileByID(TileKey);
-                    if (!_Tile.LockedToGrid) _Tile.FreeFall();
+                    if (!_Tile.LockedToGrid) _Tile.FreeFall(); // Ensure the tile on the temporary list is still unattached.
                 }
             }
         }
@@ -1320,7 +1323,7 @@ public class PuzzleGrid : MonoBehaviour
 
     }
 
-    Griddable GetTileByID(int TileKey)
+    public Griddable GetTileByID(int TileKey)
     {
         if (TileKey == 0) return null;
         if (!Tiles.TryGetValue(TileKey, out Griddable TileTemp)) Debug.LogError("Grid Tile not Found: " + TileKey);
@@ -1481,7 +1484,7 @@ public class PuzzleGrid : MonoBehaviour
 
         if (GetTileKeyAtGridCoordinate(_GridCoordinate) != 0)
         {
-            Debug.LogWarning("Tile requested attachment to an occupied grid-space.");
+            Debug.LogWarning("Tile requested attachment to an occupied grid-space at coordinate: " + _GridCoordinate);
             return false;
         }
 
@@ -1655,8 +1658,10 @@ public class PuzzleGrid : MonoBehaviour
                 {
 
                     BlockTile.BlockSection _BlockSection = BlockTile.BlockSection.Single;
-                    int _KeyID = CreateNewBlockTile(_Block, _GridPosition + new Vector2(i, j), false, _BlockSection);
-                    BlockTile _BlockTile = (BlockTile)GetTileByID(_KeyID);
+                    Vector2Int BlockGridPosition = new Vector2Int(i, j);
+
+                    int _KeyID = CreateNewBlockTile(_Block, _GridPosition + (Vector2) BlockGridPosition, false, _BlockSection, BlockGridPosition);
+                    BlockTile _BlockTile = (BlockTile) GetTileByID(_KeyID);
                     if (_BlockTile == null) Debug.LogError("Recently created block not found or cast correctly.");
                     _Block.AddBlockTile(_BlockTile, new Vector2Int(i, j));
 
@@ -1669,9 +1674,9 @@ public class PuzzleGrid : MonoBehaviour
         return NextBlockID++;
     }
 
-    int CreateNewBlockTile(Block _Block, Vector2 _GridPosition, bool _LockedToGrid, BlockTile.BlockSection _BlockSection)
+    int CreateNewBlockTile(Block _Block, Vector2 _GridPosition, bool _LockedToGrid, BlockTile.BlockSection _BlockSection, Vector2Int _BlockGridCoordinate)
     {
-        Tiles.Add(NextTileID, new BlockTile(this, NextTileID, _GridPosition, _LockedToGrid, _Block, _BlockSection));
+        Tiles.Add(NextTileID, new BlockTile(this, NextTileID, _GridPosition, _LockedToGrid, _Block, _BlockSection, _BlockGridCoordinate));
         if (!_LockedToGrid) UnlockedTiles.Add(NextTileID);
         return NextTileID++;
     }

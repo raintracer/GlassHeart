@@ -50,23 +50,43 @@ public class Block
 
     }
 
+    /// <summary>
+    /// When one BlockTile lands, it calls this function on its Block to trigger all other associated BlockTiles to attach to the grid. Called AFTER the caller BlockTile successfully attaches.
+    /// </summary>
+    /// <param name="Caller">Used to prevent the Block from requesting this BlockTile to attach again. Also, its relative position will be used to arrange the other tiles on the PuzzleGrid gridspace.</param>
     public void AttachAll(BlockTile Caller)
     {
         
+        // The block itself enters a Set state
         State = BlockState.Set;
 
-        for (int i = 0; i < BlockTiles.Count; i++)
+        // Iterate through the BlockGrid
+        for (int i = 0; i < BlockSize.x; i++)
         {
+            for (int j = 0; j < BlockSize.y; j++)
+            {
 
-            BlockTile _BlockTile = BlockTiles[i];
-            if (_BlockTile.KeyID == Caller.KeyID) continue; // Ignore the tile that already attached.
+                // Check Key ID
+                int KeyID = BlockGrid[i, j];
+                if (KeyID == Caller.KeyID) continue;    // Ignore the tile that already attached.
+                if (KeyID == 0) continue;               // Ignore empty positions                                
 
-            // Attach other tiles on their respective x coordinate but with the same y coordinate as the caller
-            Vector2Int AttachPoint = new Vector2Int((int)(_BlockTile.GridPosition.x + 0.5f), Caller.GridCoordinate.y);
-            _BlockTile.ParentGrid.RequestAttachment(_BlockTile, AttachPoint);
+                // Attach other BlockTiles based on their relative positions in the block arrangement
+                Vector2Int RelativeBlockGridCoordinate = new Vector2Int(i, j) - Caller.BlockGridCoordinate;
 
+                // Convert the 
+                Vector2Int AttachPoint = Caller.GridCoordinate + RelativeBlockGridCoordinate;
+
+                // Request attachment
+                BlockTile _BlockTile = ParentGrid.GetTileByID(KeyID) as BlockTile;
+                if (_BlockTile == null) Debug.LogError("Invalid BlockTile called and casted, Key ID: " + KeyID);
+                _BlockTile.ParentGrid.RequestAttachment(_BlockTile, AttachPoint);
+                
+            }
         }
+
     }
+
 
     public void Clear()
     {
@@ -86,6 +106,8 @@ public class Block
         }
 
     }
+
+
     /// <summary>
     /// Checks if all tile entities may fall. If so, commands all tile entities to fall together.
     /// </summary>
@@ -106,7 +128,7 @@ public class Block
         {
             BlockTile _BlockTile = BlockTiles[i];
 
-            // All tiles must be set to fall
+            // All tiles must be in Set state to transition to Falling/Free
             if (!_BlockTile.IsSet())
             {
                 Debug.LogWarning("Block checked fall conditions on a non-set block tile.");
@@ -114,7 +136,10 @@ public class Block
                 break;
             }
 
-            // All tiles must have an empty grid-position under them.
+            // Tiles do not need an empty grid coordinate under them if another BlockTile from this block is under them.
+
+
+            // All other tiles must have an empty grid-coordinate under them.  // THERE IS AN EXCEPTION IF THE BLOCK UNDER THEM IS A BLOCK IN THE BLOCK ARRANGEMENT
             Vector2Int _GridCoordinate = _BlockTile.GridCoordinate;
             Vector2Int _CheckCoordinate = _GridCoordinate + Vector2Int.down;
 

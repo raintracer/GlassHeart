@@ -14,16 +14,19 @@ public class BlockTile : Griddable
     override public TileType Type { get; protected set; } = TileType.Block;
     override public bool Swappable { get; protected set; } = false;
 
+    public Vector2Int BlockGridCoordinate { get; private set; }
+
     public enum BlockSection { Single, SingleLeft, SingleCenter, SingleRight }
     private BlockSection Section;
 
     public Block MyBlock;
 
 
-    public BlockTile(PuzzleGrid Grid, int _Key, Vector2 _GridPos, bool _LockedToGrid, Block _MyBlock, BlockSection _BlockSection) : base(Grid, _Key, _GridPos, _LockedToGrid)
+    public BlockTile(PuzzleGrid Grid, int _Key, Vector2 _GridPos, bool _LockedToGrid, Block _MyBlock, BlockSection _BlockSection, Vector2Int _BlockGridCoordinate) : base(Grid, _Key, _GridPos, _LockedToGrid)
     {
         MyBlock = _MyBlock;
         Section = _BlockSection;
+        BlockGridCoordinate = _BlockGridCoordinate;
         InitializeSprite();
     }
 
