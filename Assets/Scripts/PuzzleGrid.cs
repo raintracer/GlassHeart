@@ -1581,7 +1581,7 @@ public class PuzzleGrid : MonoBehaviour
     private void QueueRandomBlock()
     {
 
-        switch(Random.Range(1, 6))
+        switch(5)
         {
             case 1:
                 BlockQueue.Add(Block.HalfBlock);

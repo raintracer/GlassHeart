@@ -124,7 +124,7 @@ public class Block
 
         bool FallAllowed = true; // FallAllowed is true unless proven otherwise
 
-        for (int i = 0; i < BlockSize.x; i++)
+        for (int i = 0; i < BlockTiles.Count; i++)
         {
             BlockTile _BlockTile = BlockTiles[i];
 
@@ -137,9 +137,13 @@ public class Block
             }
 
             // Tiles do not need an empty grid coordinate under them if another BlockTile from this block is under them.
+            if (_BlockTile.BlockGridCoordinate.y > 0)
+            {
+                Vector2Int _BlockCoordinateCheck = _BlockTile.BlockGridCoordinate + Vector2Int.down;
+                if (BlockGrid[_BlockCoordinateCheck.x, _BlockCoordinateCheck.y] != 0) continue; // If there is a neighbor BlockTile under this one, it cannot restrict the Block from falling
+            }
 
-
-            // All other tiles must have an empty grid-coordinate under them.  // THERE IS AN EXCEPTION IF THE BLOCK UNDER THEM IS A BLOCK IN THE BLOCK ARRANGEMENT
+            // All other tiles must have an empty grid-coordinate under them.
             Vector2Int _GridCoordinate = _BlockTile.GridCoordinate;
             Vector2Int _CheckCoordinate = _GridCoordinate + Vector2Int.down;
 
@@ -164,13 +168,15 @@ public class Block
 
         if (FallAllowed)
         {
+
             State = BlockState.Falling;
 
-            for (int i = 0; i < BlockSize.x; i++)
+            for (int i = 0; i < BlockTiles.Count; i++)
             {
                 BlockTile _BlockTile = BlockTiles[i];
                 ParentGrid.GridRequests.Add( new GridRequest { Type = GridRequestType.Update, Coordinate = _BlockTile.GridCoordinate, Chaining = false } );
             } 
+
         }
 
 
