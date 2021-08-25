@@ -1,4 +1,19 @@
-Done:
+This Commit:
+BlockQueue will no longer carry a Vector2Int with the rectangular block size, but a 2D boolean array representing a block arrangement, allowing for arbitrary shapes of blocks.
 
+Added a random block queue method
 
-TODO:
+Added some rectangular block definitions as 2D boolean arrays
+
+For simplicity, moved to a single type of block sprite. This prevents creating and choosing from a huge set of sprites. This leads to individual blocks from being indistinguishable. Give blocks random off-shades to help differentiate them.
+
+Remove block land bounce.
+
+Fixed error where tiles were requesting attachment when they were above the grid-space, leading to out-of-bounds accessing on the array.
+
+In Progress:
+Horizontal randomization of blocks that do not take up the full length of the grid.
+
+Fix basic tiles spawning in from blocks being too transparent during the block clearing animation
+
+A list of 2d arrays? Or a binary set that decodes to an arrangement?

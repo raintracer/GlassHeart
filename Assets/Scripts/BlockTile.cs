@@ -14,7 +14,7 @@ public class BlockTile : Griddable
     override public TileType Type { get; protected set; } = TileType.Block;
     override public bool Swappable { get; protected set; } = false;
 
-    public enum BlockSection { SingleLeft, SingleCenter, SingleRight }
+    public enum BlockSection { Single, SingleLeft, SingleCenter, SingleRight }
     private BlockSection Section;
 
     public Block MyBlock;
@@ -43,6 +43,9 @@ public class BlockTile : Griddable
             case BlockSection.SingleRight:
                 BlockSprite = GameAssets.Sprite.BlockTileSingleRight;
                 break;
+            case BlockSection.Single:
+                BlockSprite = GameAssets.Sprite.BlockTileSingle;
+                break;
             default:
                 Debug.LogError("Unknown block sprite requested.");
                 break;
@@ -51,6 +54,12 @@ public class BlockTile : Griddable
         SR_Background.sprite = null;
         SR_Icon.sprite = BlockSprite;
 
+    }
+
+    public void SetShade(float BlockShade)
+    {
+        float BaseValue = 0.6f;
+        SR_Icon.color = new Color(BaseValue + BlockShade, BaseValue + BlockShade, BaseValue + BlockShade);
     }
 
     override protected void OnAttach()
@@ -121,6 +130,11 @@ public class BlockTile : Griddable
         // Request replacement
         ParentGrid.RequestTileReplacement(_TileColor, GridCoordinate, GetChaining());
 
+    }
+
+    override protected IEnumerator AnimateLand()
+    {
+        yield return null;
     }
 
 

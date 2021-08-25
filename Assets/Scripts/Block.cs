@@ -12,20 +12,42 @@ public class Block
     private int BlockID;
     private Vector2Int BlockSize;
     private List<BlockTile> BlockTiles = new List<BlockTile>();
+    public int[,] BlockGrid;
+
+    // Adjusts the value of a block randomly to differentiate them
+    private float BlockShade;
+    private const float SHADE_RANGE = 0.3f;
 
     public enum BlockState { Set, Falling, Clearing, Dying };
     public BlockState State = BlockState.Falling;
+    
 
     public Block(PuzzleGrid _ParentGrid, int _BlockID, Vector2Int _BlockSize, Vector2 _GridPosition)
     {
+        
         ParentGrid = _ParentGrid;
         BlockID = _BlockID;
         BlockSize = _BlockSize;
+
+        // Initialize a BlockGrid. PuzzleGrid will immediately assign these for Block with BlockTiles via AddBlockTile
+        BlockGrid = new int[BlockSize.x, BlockSize.y];
+
+        // Randomize Block Shade
+        BlockShade = (Random.Range(0f, 2f) - 1f) * SHADE_RANGE;
+
     }
 
-    public void AddBlockTile(BlockTile _BlockTileToAdd)
+    public void AddBlockTile(BlockTile _BlockTileToAdd, Vector2Int _BlockGridPosition)
     {
+
         BlockTiles.Add(_BlockTileToAdd);
+
+        // Add the BlockTile to the BlockGrid
+        BlockGrid[_BlockGridPosition.x, _BlockGridPosition.y] = _BlockTileToAdd.KeyID;
+
+        // Apply the BlockShade to the BlockTile
+        _BlockTileToAdd.SetShade(BlockShade);
+
     }
 
     public void AttachAll(BlockTile Caller)
@@ -139,5 +161,27 @@ public class Block
             ParentGrid.RemoveBlockByID(BlockID);
         }
     }
+
+    #region Block Shapes
+
+    static public bool [,] RectangularBlock(Vector2Int BlockSize)
+    {
+
+        bool[,] BlockArray = new bool[BlockSize.x, BlockSize.y];
+
+        for (int i = 0; i < BlockSize.x; i++)
+            for (int j = 0; j < BlockSize.y; j++)
+                BlockArray[i, j] = true;
+
+        return BlockArray;
+    }
+
+    static public bool[,] FullBlock = RectangularBlock(new Vector2Int(6, 1));
+    static public bool[,] HalfBlock = RectangularBlock(new Vector2Int(3, 1));
+    static public bool[,] SmallSquareBlock = RectangularBlock(new Vector2Int(2, 2));
+    static public bool[,] SpikeBlock = RectangularBlock(new Vector2Int(1, 3));
+    static public bool[,] PebbleBlock = RectangularBlock(new Vector2Int(1, 1));
+
+    #endregion
 
 }

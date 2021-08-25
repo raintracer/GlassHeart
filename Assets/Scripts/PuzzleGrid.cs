@@ -22,7 +22,7 @@ public class PuzzleGrid : MonoBehaviour
 
     // This collection holds the block entities
     private Dictionary<int, Block> Blocks = new Dictionary<int, Block>();
-    private List<Vector2Int> BlockQueue = new List<Vector2Int>();
+    private List<bool[,]> BlockQueue = new List<bool[,]>();
 
     // This collection holds tiles are clearing
     private HashSet<int> ClearingTiles = new HashSet<int>();
@@ -755,7 +755,7 @@ public class PuzzleGrid : MonoBehaviour
             {
                 if(OpponentGrid != null)
                 {
-                    OpponentGrid.QueueBlock(new Vector2Int(6, 1));
+                    OpponentGrid.QueueRandomBlock();
                 }
             }
 
@@ -1572,7 +1572,34 @@ public class PuzzleGrid : MonoBehaviour
 
     private void QueueBlock(Vector2Int _BlockSize)
     {
-        BlockQueue.Add(_BlockSize);
+        BlockQueue.Add(Block.RectangularBlock(_BlockSize));
+    }
+
+    private void QueueRandomBlock()
+    {
+
+        switch(Random.Range(1, 6))
+        {
+            case 1:
+                BlockQueue.Add(Block.HalfBlock);
+                break;
+            case 2:
+                BlockQueue.Add(Block.FullBlock);
+                break;
+            case 3:
+                BlockQueue.Add(Block.PebbleBlock);
+                break;
+            case 4:
+                BlockQueue.Add(Block.SpikeBlock);
+                break;
+            case 5:
+                BlockQueue.Add(Block.SmallSquareBlock);
+                break;
+            default:
+                Debug.LogError("Unexpected value for Random Block Int.");
+                break;
+        }
+
     }
 
     private void ProcessBlockQueue()
@@ -1594,43 +1621,49 @@ public class PuzzleGrid : MonoBehaviour
         // If clear, spawn the next block and clear the list entry
         if (SpawnRowIsClear)
         {
-            SpawnBlock(new Vector2(0f, BLOCK_SPAWN_ROW_OFFSET + Ceiling_Row), BlockQueue[0]);
+
+            // Determine random horizontal position limited by the block's width
+            int _BlockWidth = BlockQueue[0].GetLength(0);
+            int _HorizontalOffsetInt = Random.Range(0, GridSize.x - _BlockWidth + 1);
+            float _HorizontalOffsetFloat = _HorizontalOffsetInt;
+
+            // Spawn Block and remove from queue
+            SpawnBlock(new Vector2(_HorizontalOffsetFloat, BLOCK_SPAWN_ROW_OFFSET + Ceiling_Row), BlockQueue[0]);
             BlockQueue.RemoveAt(0);
+        
         }
 
 
     }
 
-    private int SpawnBlock(Vector2 _GridPosition, Vector2Int _BlockSize)
+    private int SpawnBlock(Vector2 _GridPosition, bool[,] _Arrangement)
     {
+
+        Vector2Int _BlockSize = new Vector2Int(_Arrangement.GetLength(0), _Arrangement.GetLength(1));
         Block _Block = new Block(this, NextBlockID, _BlockSize, _GridPosition);
         Blocks.Add(NextBlockID, _Block);
 
         // Create BlockTiles
         for (int i = 0; i <  _BlockSize.x; i++)
         {
+            
             for (int j = 0; j < _BlockSize.y; j++)
             {
 
-                BlockTile.BlockSection _BlockSection;
-                if(i == 0)
+                // Determine if there should be a block at this point in the arrangement
+                if (_Arrangement[i, j])
                 {
-                    _BlockSection = BlockTile.BlockSection.SingleLeft;
-                } 
-                else if (i == _BlockSize.x - 1)
-                {
-                    _BlockSection = BlockTile.BlockSection.SingleRight;
-                }
-                else
-                {
-                    _BlockSection = BlockTile.BlockSection.SingleCenter;
+
+                    BlockTile.BlockSection _BlockSection = BlockTile.BlockSection.Single;
+                    int _KeyID = CreateNewBlockTile(_Block, _GridPosition + new Vector2(i, j), false, _BlockSection);
+                    BlockTile _BlockTile = (BlockTile)GetTileByID(_KeyID);
+                    if (_BlockTile == null) Debug.LogError("Recently created block not found or cast correctly.");
+                    _Block.AddBlockTile(_BlockTile, new Vector2Int(i, j));
+
                 }
 
-                int _KeyID = CreateNewBlockTile(_Block, _GridPosition + new Vector2(i, j), false, _BlockSection);
-                BlockTile _BlockTile = (BlockTile) GetTileByID(_KeyID);
-                if (_BlockTile == null) Debug.LogError("Recently created block not found or cast correctly.");
-                _Block.AddBlockTile(_BlockTile);
             }
+
         }
 
         return NextBlockID++;

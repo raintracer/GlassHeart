@@ -186,6 +186,9 @@ public abstract class Griddable
         Vector2Int GridCheck = new Vector2Int((int)(newGridPosition.x + 0.5f), (int)(newGridPosition.y));
         Vector2Int AttachPoint = GridCheck;
 
+        // Do not request attachment if the tile is above the grid space
+        if (GridCheck.y >= ParentGrid.GridSize.y) return;
+
        if (GridCheck.y < 0 || ParentGrid.GetTileKeyAtGridCoordinate(GridCheck) != 0)
         {
             // Request Attachment
@@ -326,7 +329,7 @@ public abstract class Griddable
         }
 
     }
-    private IEnumerator AnimateLand()
+    virtual protected IEnumerator AnimateLand()
     {
         SR_Icon.material = GameAssets.Material.TileLand;
         SR_Icon.material.SetFloat("_StartTime", Time.time);
