@@ -60,6 +60,14 @@
                     "expectedControlType": "Button",
                     "processors": "",
                     "interactions": "Press(behavior=2)"
+                },
+                {
+                    "name": "SpawnRandomBlock",
+                    "type": "Button",
+                    "id": "de2bd541-57fe-4692-8055-9addc842c18a",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "Press(behavior=2)"
                 }
             ],
             "bindings": [
@@ -302,6 +310,17 @@
                     "processors": "",
                     "groups": "",
                     "action": "CastAir",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "ab6a178b-d396-4a57-9be6-dc8e24ae9e14",
+                    "path": "<Gamepad>/buttonNorth",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SpawnRandomBlock",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

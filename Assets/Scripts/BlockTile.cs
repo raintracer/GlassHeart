@@ -92,6 +92,17 @@ public class BlockTile : Griddable
         ParentGrid.DestroyRequest(this, _Chain);
     }
 
+    /// <summary>
+    /// Currently, BlockTiles are processed in the Gridrequest section of the code, 
+    /// to help propagate out Block-clearing for Blocks that in contact with one another.
+    /// BlockTiles must be set to Clear to prevent falling mechanisms, but cannot be cleared until
+    /// they are sorted against other clearing BlockTiles. This method is an intermediate clearing trigger for this situation.
+    /// </summary>
+    public void SetClearPending()
+    {
+        state = State.Clearing;
+    }
+
     override protected IEnumerator AnimateClear(int ClearOrder, int ClearTotal, bool HighChain) // ClearOrder is the position of this tile in a clear set (zero-indexed), ClearTotal is the total number of tiles in the clear set
     {
 

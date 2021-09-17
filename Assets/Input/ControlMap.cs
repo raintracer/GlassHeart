@@ -73,6 +73,14 @@ public class @ControlMap : IInputActionCollection, IDisposable
                     ""expectedControlType"": ""Button"",
                     ""processors"": """",
                     ""interactions"": ""Press(behavior=2)""
+                },
+                {
+                    ""name"": ""SpawnRandomBlock"",
+                    ""type"": ""Button"",
+                    ""id"": ""de2bd541-57fe-4692-8055-9addc842c18a"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": ""Press(behavior=2)""
                 }
             ],
             ""bindings"": [
@@ -317,6 +325,17 @@ public class @ControlMap : IInputActionCollection, IDisposable
                     ""action"": ""CastAir"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""ab6a178b-d396-4a57-9be6-dc8e24ae9e14"",
+                    ""path"": ""<Gamepad>/buttonNorth"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""SpawnRandomBlock"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -332,6 +351,7 @@ public class @ControlMap : IInputActionCollection, IDisposable
         m_Player_CastWater = m_Player.FindAction("CastWater", throwIfNotFound: true);
         m_Player_CastEarth = m_Player.FindAction("CastEarth", throwIfNotFound: true);
         m_Player_CastAir = m_Player.FindAction("CastAir", throwIfNotFound: true);
+        m_Player_SpawnRandomBlock = m_Player.FindAction("SpawnRandomBlock", throwIfNotFound: true);
     }
 
     public void Dispose()
@@ -388,6 +408,7 @@ public class @ControlMap : IInputActionCollection, IDisposable
     private readonly InputAction m_Player_CastWater;
     private readonly InputAction m_Player_CastEarth;
     private readonly InputAction m_Player_CastAir;
+    private readonly InputAction m_Player_SpawnRandomBlock;
     public struct PlayerActions
     {
         private @ControlMap m_Wrapper;
@@ -399,6 +420,7 @@ public class @ControlMap : IInputActionCollection, IDisposable
         public InputAction @CastWater => m_Wrapper.m_Player_CastWater;
         public InputAction @CastEarth => m_Wrapper.m_Player_CastEarth;
         public InputAction @CastAir => m_Wrapper.m_Player_CastAir;
+        public InputAction @SpawnRandomBlock => m_Wrapper.m_Player_SpawnRandomBlock;
         public InputActionMap Get() { return m_Wrapper.m_Player; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -429,6 +451,9 @@ public class @ControlMap : IInputActionCollection, IDisposable
                 @CastAir.started -= m_Wrapper.m_PlayerActionsCallbackInterface.OnCastAir;
                 @CastAir.performed -= m_Wrapper.m_PlayerActionsCallbackInterface.OnCastAir;
                 @CastAir.canceled -= m_Wrapper.m_PlayerActionsCallbackInterface.OnCastAir;
+                @SpawnRandomBlock.started -= m_Wrapper.m_PlayerActionsCallbackInterface.OnSpawnRandomBlock;
+                @SpawnRandomBlock.performed -= m_Wrapper.m_PlayerActionsCallbackInterface.OnSpawnRandomBlock;
+                @SpawnRandomBlock.canceled -= m_Wrapper.m_PlayerActionsCallbackInterface.OnSpawnRandomBlock;
             }
             m_Wrapper.m_PlayerActionsCallbackInterface = instance;
             if (instance != null)
@@ -454,6 +479,9 @@ public class @ControlMap : IInputActionCollection, IDisposable
                 @CastAir.started += instance.OnCastAir;
                 @CastAir.performed += instance.OnCastAir;
                 @CastAir.canceled += instance.OnCastAir;
+                @SpawnRandomBlock.started += instance.OnSpawnRandomBlock;
+                @SpawnRandomBlock.performed += instance.OnSpawnRandomBlock;
+                @SpawnRandomBlock.canceled += instance.OnSpawnRandomBlock;
             }
         }
     }
@@ -467,5 +495,6 @@ public class @ControlMap : IInputActionCollection, IDisposable
         void OnCastWater(InputAction.CallbackContext context);
         void OnCastEarth(InputAction.CallbackContext context);
         void OnCastAir(InputAction.CallbackContext context);
+        void OnSpawnRandomBlock(InputAction.CallbackContext context);
     }
 }

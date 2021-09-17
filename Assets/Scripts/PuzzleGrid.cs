@@ -146,6 +146,7 @@ public class PuzzleGrid : MonoBehaviour
             Inputs.Player.CastEarth.canceled += ctx => EarthInputFlag = true;
             Inputs.Player.CastFire.canceled += ctx => FireInputFlag = true;
             Inputs.Player.CastWater.canceled += ctx => WaterInputFlag = true;
+            Inputs.Player.SpawnRandomBlock.performed += ctx => QueueRandomBlock();
         }
 
         // Instantiate tile screen (acts as a sprite mask for the tiles)
@@ -159,6 +160,8 @@ public class PuzzleGrid : MonoBehaviour
 
         // Set Initial Row Healths
         for (int i = 0; i < RowHealth.Length; i++) RowHealth[i] = MaxRowHealth;
+
+        
 
     }
 
@@ -453,7 +456,7 @@ public class PuzzleGrid : MonoBehaviour
             }
 
             // Pass damage to next row?
-            TakeDamage(RowIndex - 1, CarryoverDamage);
+            if (RowIndex > 0) TakeDamage(RowIndex - 1, CarryoverDamage);
 
         }
         else
@@ -476,6 +479,10 @@ public class PuzzleGrid : MonoBehaviour
     /// </summary>
     private void ProcessGridRequests()
     {
+
+        // Check for Blocks to Clear
+        HashSet<Vector2Int> BlockTileClearHashSet = new HashSet<Vector2Int>();
+
 
         for (int i = 0; i < GridRequests.Count; i++)
         {
@@ -506,7 +513,8 @@ public class PuzzleGrid : MonoBehaviour
                         if (_Block.State == Block.BlockState.Set)
                         {
 
-                            _Block.Clear();
+                            // Clear the block, and capture the Block's BlockTile keys for processing.
+                            BlockTileClearHashSet.UnionWith(_Block.Clear());
 
                         }
                         
@@ -577,6 +585,24 @@ public class PuzzleGrid : MonoBehaviour
         }
 
         GridRequests.Clear();
+
+        // After all Gridrequests are processed, process BlockTile clearing.
+
+        if (BlockTileClearHashSet.Count > 0)
+        {
+            
+            List<Vector2Int> BlockTileClearList = new List<Vector2Int>(BlockTileClearHashSet);
+            BlockTileClearList.Sort(CompareCoordinatesByClearOrderDescending);
+            int ListCount = BlockTileClearList.Count;
+
+            for(int i = 0; i < ListCount; i++)
+            {
+                Vector2Int _TileCoordinate = BlockTileClearList[i];
+                Griddable _Tile = GetTileByGridCoordinate(_TileCoordinate);
+                _Tile.Clear(i, ListCount, false);
+            }
+
+        }
 
     }
 
@@ -909,6 +935,11 @@ public class PuzzleGrid : MonoBehaviour
         {
             return CoordinateB.y.CompareTo(CoordinateA.y);
         }
+    }
+
+    private int CompareCoordinatesByClearOrderDescending(Vector2Int CoordinateA, Vector2Int CoordinateB)
+    {
+        return CompareCoordinatesByClearOrderAscending(CoordinateB, CoordinateA);
     }
 
     #endregion
@@ -1581,7 +1612,7 @@ public class PuzzleGrid : MonoBehaviour
     private void QueueRandomBlock()
     {
 
-        switch(5)
+        switch(Random.Range(1, 6))
         {
             case 1:
                 BlockQueue.Add(Block.HalfBlock);

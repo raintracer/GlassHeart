@@ -9,11 +9,12 @@ public class Block
 {
 
     private PuzzleGrid ParentGrid;
-    private int BlockID;
+    public int BlockID { get; private set; }
     private Vector2Int BlockSize;
-    private List<BlockTile> BlockTiles = new List<BlockTile>();
+    public List<BlockTile> BlockTiles = new List<BlockTile>();
     public int[,] BlockGrid;
-
+    public int BlockTileQuantity { get { return BlockTiles.Count; } private set { } }
+    
     // Adjusts the value of a block randomly to differentiate them
     private float BlockShade;
     private const float SHADE_RANGE = 0.3f;
@@ -41,6 +42,7 @@ public class Block
     {
 
         BlockTiles.Add(_BlockTileToAdd);
+
 
         // Add the BlockTile to the BlockGrid
         BlockGrid[_BlockGridPosition.x, _BlockGridPosition.y] = _BlockTileToAdd.KeyID;
@@ -88,22 +90,31 @@ public class Block
     }
 
 
-    public void Clear()
+    public HashSet<Vector2Int> Clear()
     {
 
         State = BlockState.Clearing;
+        HashSet<Vector2Int> BlockTileCoordinates = new HashSet<Vector2Int>();
 
         for (int i = 0; i < BlockTiles.Count; i++)
         {
 
-            // Clear each block
+            // Clear each block tile
             BlockTile _BlockTile = BlockTiles[i];
-            _BlockTile.Clear(i, BlockTiles.Count, false);
-
+            
             // Generate a blockclear request at each block
             ParentGrid.GridRequests.Add(new GridRequest { Type = GridRequestType.BlockClear, Coordinate = _BlockTile.GridCoordinate});
 
+            // Add the block tile key to the list to pass back to PuzzleGrid
+            BlockTileCoordinates.Add(_BlockTile.GridCoordinate);
+
+            // Set Pending Clearing Status
+            _BlockTile.SetClearPending();
+
         }
+
+        // Pass block tile IDs back to Puzzle Grid to process collectively
+        return BlockTileCoordinates;
 
     }
 
