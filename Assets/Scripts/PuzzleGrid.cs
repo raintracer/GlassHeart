@@ -12,7 +12,7 @@ public class PuzzleGrid : MonoBehaviour
 
     // This collection holds all Griddable objects on the Grid
     private Dictionary<int, Griddable> Tiles = new Dictionary<int, Griddable>();
-    public Vector2Int GridSize = new Vector2Int(6, 15);
+    public Vector2Int GridSize = new Vector2Int(6, 22);
     private int NextTileID = 1;
     private int NextBlockID = 1;
 
@@ -69,6 +69,7 @@ public class PuzzleGrid : MonoBehaviour
     // Player properties
     private int[] RowHealth = new int[BASE_CEILING_ROW - FLOOR_ROW + 1];
     private int MaxRowHealth = 100;
+    private bool Alive = true;
 
 
     private float StopTime = 0f;
@@ -167,6 +168,9 @@ public class PuzzleGrid : MonoBehaviour
 
     void FixedUpdate()
     {
+
+        // Do nothing if defeated
+        if (!Alive) return;
 
         // Process AI Control
         if (AIControlled)
@@ -416,6 +420,9 @@ public class PuzzleGrid : MonoBehaviour
     private void TakeDamage(int RowIndex, int _DamageAmount)
     {
 
+        // If not alive, do nothing
+        if (!Alive) return;
+
         // If the row health is already 0 or below, ignore:
         if (RowHealth[RowIndex] <= 0) return;
 
@@ -458,10 +465,12 @@ public class PuzzleGrid : MonoBehaviour
             // Pass damage to next row?
             if (RowIndex > 0) TakeDamage(RowIndex - 1, CarryoverDamage);
 
+            if (RowIndex == 0) Alive = false;
+
         }
         else
         {
-            // Glass Tap
+            // Add Minor Glass Tap?
         }
 
     }
@@ -600,6 +609,7 @@ public class PuzzleGrid : MonoBehaviour
                 Vector2Int _TileCoordinate = BlockTileClearList[i];
                 Griddable _Tile = GetTileByGridCoordinate(_TileCoordinate);
                 _Tile.Clear(i, ListCount, false);
+                ClearingTiles.Add(_Tile.KeyID);
             }
 
         }
