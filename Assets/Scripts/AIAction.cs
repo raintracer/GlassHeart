@@ -403,4 +403,124 @@ public class AIAction
 
     }
 
+    static public AIAction FindHorizontalMultiSwitchMatch(PuzzleGrid Grid)
+    {
+
+        Vector2Int GridSize = Grid.GridSize;
+        bool SwapFound = false;
+        Vector2Int SwapCoordinate = Vector2Int.down;
+
+        for (int i = 0; i < GridSize.x - 1; i++)
+        {
+
+            for (int j = PuzzleGrid.FLOOR_ROW; j <= Grid.Ceiling_Row; j++)
+            {
+
+                // Look for two consecutive tiles to be present
+                BasicTile[] CheckTiles = new BasicTile[2];
+                bool SearchFailed = false;
+
+                for (int k = 0; k < 2; k++)
+                {
+                    CheckTiles[k] = Grid.GetTileByGridCoordinate(i + k, j) as BasicTile;
+                    if (CheckTiles[k] == null || !CheckTiles[k].IsSet())
+                    {
+                        SearchFailed = true;
+                        break;
+                    }
+                }
+
+                if (SearchFailed) continue;
+
+                // Determine if the colors match
+                BasicTile.TileColor MatchedColor;
+                if (CheckTiles[0].Color == CheckTiles[1].Color)
+                {
+                    MatchedColor = CheckTiles[0].Color;
+                }
+                else
+                {
+                    // Check fails if the colors do not match, proceed to next iteration
+                    continue;
+                }
+
+                // Search on either side for a tile to match to. There must be tiles under the row for the tile to slide on.
+                bool[] DirectionViable = new bool[2] { false, false };
+                int[] DirectionColumnStart = new int[2] { i, i + 1 };
+                int[] DirectionDistance = new int[2] { 0, 0 };
+                int[] Direction = new int[2] { -1, 1 };
+
+                // Search each direction
+                for (int k = 0; k <= 1; k++)
+                {
+
+                    //Go until a matching block is found, or there is no supporting tile underneath
+                    for (int w = DirectionColumnStart[k] + Direction[k]; w >= 0 && w < GridSize.x; w += Direction[k])
+                    {
+
+                        Vector2Int _CheckCoordinate = new Vector2Int(w, j);
+
+                        // Give up on the current direction if there is no supporting block
+                        if (!Grid.CoordinateIsSupported(_CheckCoordinate)) break;
+
+                        // Give up on the current direction if it is blocked by a BlockTile
+                        Griddable _Tile = Grid.GetTileByGridCoordinate(_CheckCoordinate);
+                        if (_Tile != null && _Tile.Type == Griddable.TileType.Block) break;
+
+                        // If the tile matches the match color, log it as a possbility
+                        BasicTile _BasicTile = _Tile as BasicTile;
+                        if (_BasicTile != null && _BasicTile.Color == MatchedColor)
+                        {
+                            DirectionViable[k] = true;
+                            DirectionDistance[k] = Mathf.Abs(DirectionColumnStart[k] - w);
+                            break;
+                        }
+
+                    }
+                }
+
+                // If neither direction is viable, give up on this match
+                if (!DirectionViable[0] && !DirectionViable[1]) break;
+
+                // Prepare to select a direction
+                Vector2Int SelectedOffset = Vector2Int.zero;
+
+                // If both directions are viable, compare their distance, prefer left in case of a tie
+                if (DirectionViable[0] && DirectionViable[1])
+                {
+                    if (DirectionDistance[0] <= DirectionDistance[1])
+                    {
+                        SwapCoordinate = new Vector2Int(i - DirectionDistance[0], j);  // Select Left
+                    }
+                    else
+                    {
+                        SwapCoordinate = new Vector2Int(i + DirectionDistance[1], j); // Select Right
+                    }
+                }
+                else if (DirectionViable[0])
+                {
+                    SwapCoordinate = new Vector2Int(i - DirectionDistance[0], j);  // Select Left
+                }
+                else
+                {
+                    SwapCoordinate = new Vector2Int(i + DirectionDistance[1], j); // Select Right
+                }
+
+                SwapFound = true;
+
+            }
+
+        }
+        // If a swap was found, return the appropriate Swap Action object
+        if (SwapFound)
+        {
+            AIAction SwapAction = new AIAction(nameof(FindHorizontalSingleSwitchMatch), ActionType.Swap, SwapCoordinate);
+            return SwapAction;
+        }
+
+        // If no swap was found, return null
+        return null;
+
+    }
+
 }

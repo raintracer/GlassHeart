@@ -284,7 +284,7 @@ public class PuzzleGrid : MonoBehaviour
         if (ClearingTiles.Count == 0 || HyperBoostTime > 0f)
         {
 
-            // Decerement hyper boost time if it is active
+            // Decrement hyper boost time if it is active
             if(HyperBoostTime > 0)
             {
                 HyperBoostTime -= Time.fixedDeltaTime;
@@ -326,6 +326,7 @@ public class PuzzleGrid : MonoBehaviour
                         if (ScrollBoostInput)
                         {
                             ScrollBoostLock = true;
+                            StopTime = 0f;
                         }       
                     }
 
@@ -342,6 +343,16 @@ public class PuzzleGrid : MonoBehaviour
                     }
                     else
                     {
+
+                        // If normal scrolling is to be done, check for StopTime
+                        if (StopTime > 0f)
+                        {
+                            StopTime -= Time.fixedDeltaTime;
+                            if (StopTime < 0) StopTime = 0;
+                            return;
+                        }
+
+
                         ScrollAmount = SCROLL_SPEED_BASE * Time.fixedDeltaTime;
                         ScrollBoostLock = false;
                     }
@@ -426,7 +437,6 @@ public class PuzzleGrid : MonoBehaviour
         // If the row health is already 0 or below, ignore:
         if (RowHealth[RowIndex] <= 0) return;
 
-
         // Otherwise, inflict damage
         int CarryoverDamage = _DamageAmount - RowHealth[RowIndex];
         RowHealth[RowIndex] -= _DamageAmount;
@@ -438,7 +448,7 @@ public class PuzzleGrid : MonoBehaviour
             // Destroy all tiles on that row
             for (int i = 0; i < GridSize.x; i++)
             {
-                new GridRequest { Coordinate = new Vector2Int(i, RowIndex + FLOOR_ROW), Type = GridRequestType.Destroy, Chaining = false };
+                new GridRequest { Coordinate = new Vector2Int(i, FLOOR_ROW), Type = GridRequestType.Destroy, Chaining = false };
             }
 
             // If this is the above the ceiling row, lower it to this level
@@ -552,13 +562,20 @@ public class PuzzleGrid : MonoBehaviour
                 
                 Vector2Int _TileCoordinate = GridRequests[i].Coordinate;
                 int TileID = GetTileKeyAtGridCoordinate(_TileCoordinate);
-                Griddable.TileType _TileType = GetTileByID(TileID).Type;
-                GridRequests.Add(new GridRequest { Type = GridRequestType.Update, Coordinate = _TileCoordinate, Chaining = GridRequests[i].Chaining });
-                UnattachTileFromGrid(_TileCoordinate);
-                DestroyUnlockedTile(GetTileByID(TileID));
 
-                //Replace basic tiles with a hangtime ethereal tile
-                if (_TileType == Griddable.TileType.Basic) AttachTileToGrid(GetTileByID(CreateNewHangtimeEtherialTile(_TileCoordinate)), _TileCoordinate);
+                // Only continue if the coordinate is not empty
+                if (TileID != 0)
+                {
+
+                    Griddable.TileType _TileType = GetTileByID(TileID).Type;
+                    GridRequests.Add(new GridRequest { Type = GridRequestType.Update, Coordinate = _TileCoordinate, Chaining = GridRequests[i].Chaining });
+                    UnattachTileFromGrid(_TileCoordinate);
+                    DestroyUnlockedTile(GetTileByID(TileID));
+
+                    // Replace basic tiles with a hangtime ethereal tile
+                    if (_TileType == Griddable.TileType.Basic) AttachTileToGrid(GetTileByID(CreateNewHangtimeEtherialTile(_TileCoordinate)), _TileCoordinate);
+
+                }
 
             }
 
@@ -748,6 +765,9 @@ public class PuzzleGrid : MonoBehaviour
                 TechCounter Counter = CounterObject.GetComponent<TechCounter>();
                 Griddable FirstTile = GetTileByGridCoordinate(ClearedCoordinatesList[0]);
                 Counter.StartEffect(TechCounter.TechType.Combo, ClearedCoordinatesHash.Count, (Vector2)FirstTile.GetWorldPosition() + new Vector2(0.5f, 0.75f));
+
+                // Grant StopTime
+                StopTime += 1f;
             }
 
             // Check for chain
@@ -758,6 +778,9 @@ public class PuzzleGrid : MonoBehaviour
                 GameObject CounterObject = Instantiate(Resources.Load<GameObject>("TechCounterObject"));
                 TechCounter Counter = CounterObject.GetComponent<TechCounter>();
                 Griddable FirstTile = GetTileByGridCoordinate(ClearedCoordinatesList[0]);
+
+                // Grant StopTime
+                StopTime += 0.25f;
 
                 // Offset the chain tech counter if there was also a combo
                 Vector2 ComboOffset = Vector2.zero;
@@ -878,17 +901,17 @@ public class PuzzleGrid : MonoBehaviour
         }
 
         // Translate sprite mask for meter
-        MeterTransform.localPosition = new Vector3(MinPosition + _ManaSet / MaxMana * (MaxPosition - MinPosition), MeterTransform.localPosition.y);
+        // MeterTransform.localPosition = new Vector3(MinPosition + _ManaSet / MaxMana * (MaxPosition - MinPosition), MeterTransform.localPosition.y);
         
         // Set sprite brightness
-        if (_ManaSet == MaxMana)
+        /*if (_ManaSet == MaxMana)
         {
             FillTransform.GetComponent<SpriteRenderer>().color = Color.white;
         }
         else
         {
             FillTransform.GetComponent<SpriteRenderer>().color = Color.grey;
-        }
+        }*/
 
     }
 
