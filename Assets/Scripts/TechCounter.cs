@@ -9,7 +9,7 @@ public class TechCounter : MonoBehaviour
     const int TECH_COUNTER_LIFETIME_FRAMES = 45;
     float ScrollSpeed = .25f;
 
-    public GameObject GO;
+    private GameObject GO;
     TextMeshPro CounterTextMesh;
     SpriteRenderer SR_Background;
     public enum TechType { Combo, Chain };
@@ -30,10 +30,10 @@ public class TechCounter : MonoBehaviour
         if(_Type == TechType.Chain)
         {
             CounterTextMesh.text = "X" + _Level.ToString();
-            SR_Background.color = Color.green;
+            SR_Background.sprite = GameAssets.Sprite.TechBox;
         } else if (_Type == TechType.Combo){
             CounterTextMesh.text = _Level.ToString();
-            SR_Background.color = Color.red;
+            SR_Background.sprite = GameAssets.Sprite.TechBoxChain;
         }
 
         StartCoroutine("DisplayCountdown");

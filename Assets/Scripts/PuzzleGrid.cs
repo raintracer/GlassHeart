@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.U2D;
 using TMPro;
 
 /// <summary>
@@ -15,6 +16,9 @@ public class PuzzleGrid : MonoBehaviour
     public Vector2Int GridSize = new Vector2Int(6, 22);
     private int NextTileID = 1;
     private int NextBlockID = 1;
+    [SerializeField] private SpriteAtlas atlas;
+    private Sprite[] atlasSprites;
+    
 
     // These collections hold integer keys that correspond with the Dictionary of Griddables
     public int[,] TileGrid;
@@ -114,6 +118,9 @@ public class PuzzleGrid : MonoBehaviour
 
     void Awake()
     {
+
+        // Test Atlas
+        Debug.Log(atlas.GetSprites(atlasSprites));
 
         // Initialize Grid
         GridWorldPosition = transform.position + new Vector3(1, -1, 0);
@@ -769,7 +776,7 @@ public class PuzzleGrid : MonoBehaviour
                 // Grant StopTime
                 StopTime += 1f;
             }
-
+            
             // Check for chain
             if (Chained)
             {

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.U2D;
 
 static public class GameAssets
 {
@@ -63,25 +64,31 @@ static public class GameAssets
 
     private static void LoadSprites()
     {
+
+        // Load Atlases
+        SpriteAtlas PuzzleGridSpriteAtlas = Resources.Load<SpriteAtlas>("PuzzleGridSpriteAtlas");
+
         Sprites = new Dictionary<string, UnityEngine.Sprite>
         {
-            ["TileBlueBackground"] = Resources.Load<UnityEngine.Sprite>("Tile-Blue-Background"),
-            ["TileIndigoBackground"] = Resources.Load<UnityEngine.Sprite>("Tile-Indigo-Background"),
-            ["TileRedBackground"] = Resources.Load<UnityEngine.Sprite>("Tile-Red-Background"),
-            ["TileYellowBackground"] = Resources.Load<UnityEngine.Sprite>("Tile-Yellow-Background"),
-            ["TilePurpleBackground"] = Resources.Load<UnityEngine.Sprite>("Tile-Purple-Background"),
-            ["TileGreenBackground"] = Resources.Load<UnityEngine.Sprite>("Tile-Green-Background"),
-            ["TileBlueBackground"] = Resources.Load<UnityEngine.Sprite>("Tile-Blue-Background"),
-            ["TileBlueIcon"] = Resources.Load<UnityEngine.Sprite>("Tile-Blue-Icon"),
-            ["TileIndigoIcon"] = Resources.Load<UnityEngine.Sprite>("Tile-Indigo-Icon"),
-            ["TileRedIcon"] = Resources.Load<UnityEngine.Sprite>("Tile-Red-Icon"),
-            ["TileYellowIcon"] = Resources.Load<UnityEngine.Sprite>("Tile-Yellow-Icon"),
-            ["TilePurpleIcon"] = Resources.Load<UnityEngine.Sprite>("Tile-Purple-Icon"),
-            ["TileGreenIcon"] = Resources.Load<UnityEngine.Sprite>("Tile-Green-Icon"),
-            ["BlockTileSingleLeft"] = Resources.Load<UnityEngine.Sprite>("BlockTileSingleLeft"),
-            ["BlockTileSingleCenter"] = Resources.Load<UnityEngine.Sprite>("BlockTileSingleCenter"),
-            ["BlockTileSingleRight"] = Resources.Load<UnityEngine.Sprite>("BlockTileSingleRight"),
-            ["BlockTileSingle"] = Resources.Load<UnityEngine.Sprite>("BlockTileSingle")
+            ["TileBlueBackground"] = PuzzleGridSpriteAtlas.GetSprite("Tile-Blue-Background"),
+            ["TileIndigoBackground"] = PuzzleGridSpriteAtlas.GetSprite("Tile-Indigo-Background"),
+            ["TileRedBackground"] = PuzzleGridSpriteAtlas.GetSprite("Tile-Red-Background"),
+            ["TileYellowBackground"] = PuzzleGridSpriteAtlas.GetSprite("Tile-Yellow-Background"),
+            ["TilePurpleBackground"] = PuzzleGridSpriteAtlas.GetSprite("Tile-Purple-Background"),
+            ["TileGreenBackground"] = PuzzleGridSpriteAtlas.GetSprite("Tile-Green-Background"),
+            ["TileBlueBackground"] = PuzzleGridSpriteAtlas.GetSprite("Tile-Blue-Background"),
+            ["TileBlueIcon"] = PuzzleGridSpriteAtlas.GetSprite("Tile-Blue-Icon"),
+            ["TileIndigoIcon"] = PuzzleGridSpriteAtlas.GetSprite("Tile-Indigo-Icon"),
+            ["TileRedIcon"] = PuzzleGridSpriteAtlas.GetSprite("Tile-Red-Icon"),
+            ["TileYellowIcon"] = PuzzleGridSpriteAtlas.GetSprite("Tile-Yellow-Icon"),
+            ["TilePurpleIcon"] = PuzzleGridSpriteAtlas.GetSprite("Tile-Purple-Icon"),
+            ["TileGreenIcon"] = PuzzleGridSpriteAtlas.GetSprite("Tile-Green-Icon"),
+            ["BlockTileSingleLeft"] = PuzzleGridSpriteAtlas.GetSprite("BlockTileSingleLeft"),
+            ["BlockTileSingleCenter"] = PuzzleGridSpriteAtlas.GetSprite("BlockTileSingleCenter"),
+            ["BlockTileSingleRight"] = PuzzleGridSpriteAtlas.GetSprite("BlockTileSingleRight"),
+            ["BlockTileSingle"] = PuzzleGridSpriteAtlas.GetSprite("BlockTileSingle"),
+            ["TechBox"] = PuzzleGridSpriteAtlas.GetSprite("TechBox"),
+            ["TechBoxChain"] = PuzzleGridSpriteAtlas.GetSprite("TechBoxChain")
         };
     }
 
@@ -110,6 +117,8 @@ static public class GameAssets
         public static UnityEngine.Sprite BlockTileSingleCenter { get => GetSprite("BlockTileSingleCenter"); }
         public static UnityEngine.Sprite BlockTileSingleRight { get => GetSprite("BlockTileSingleRight"); }
         public static UnityEngine.Sprite BlockTileSingle { get => GetSprite("BlockTileSingle"); }
+        public static UnityEngine.Sprite TechBox { get => GetSprite("TechBox"); }
+        public static UnityEngine.Sprite TechBoxChain { get => GetSprite("TechBoxChain"); }
     }
 
     #endregion

@@ -1,0 +1,112 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!687078895 &4343727234628468602
+SpriteAtlas:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: PuzzleGridSpriteAtlas
+  m_EditorData:
+    serializedVersion: 2
+    textureSettings:
+      serializedVersion: 2
+      anisoLevel: 1
+      compressionQuality: 50
+      maxTextureSize: 2048
+      textureCompression: 0
+      filterMode: 1
+      generateMipMaps: 0
+      readable: 0
+      crunchedCompression: 0
+      sRGB: 1
+    platformSettings:
+    - serializedVersion: 3
+      m_BuildTarget: DefaultTexturePlatform
+      m_MaxTextureSize: 1024
+      m_ResizeAlgorithm: 0
+      m_TextureFormat: -1
+      m_TextureCompression: 1
+      m_CompressionQuality: 50
+      m_CrunchedCompression: 0
+      m_AllowsAlphaSplitting: 0
+      m_Overridden: 0
+      m_AndroidETC2FallbackOverride: 0
+      m_ForceMaximumCompressionQuality_BC6H_BC7: 0
+    packingSettings:
+      serializedVersion: 2
+      padding: 2
+      blockOffset: 1
+      allowAlphaSplitting: 0
+      enableRotation: 0
+      enableTightPacking: 0
+    secondaryTextureSettings: {}
+    variantMultiplier: 1
+    packables:
+    - {fileID: 102900000, guid: ede625ffbd1954345bef36ec27c39071, type: 3}
+    totalSpriteSurfaceArea: 408002
+    bindAsDefault: 1
+    isAtlasV2: 0
+    cachedData: {fileID: 0}
+  m_MasterAtlas: {fileID: 0}
+  m_PackedSprites:
+  - {fileID: 21300000, guid: 3fe35810571b0d840ade18dacb44449c, type: 3}
+  - {fileID: 21300000, guid: 640cc2d1b84ef54479e1bdb8a32d3047, type: 3}
+  - {fileID: 21300000, guid: 08b9abf11edc2104f9e36eaf9017c701, type: 3}
+  - {fileID: 21300000, guid: 33b57a9236d92974a8fbb7e64637b5c8, type: 3}
+  - {fileID: 21300000, guid: 8d3caca23d78ca34eb782a33ccf9b4fa, type: 3}
+  - {fileID: 21300000, guid: 88c86683a324ad24aafe28f501dd11dc, type: 3}
+  - {fileID: 21300000, guid: 78913584be21eea43827bea8849a04bf, type: 3}
+  - {fileID: 21300000, guid: 4c8941e4d5dd7674f82a66319e1b87cf, type: 3}
+  - {fileID: 21300000, guid: 4bbb2075fee0dc64794db5c483adf941, type: 3}
+  - {fileID: 21300000, guid: d21e57d53c2afd34fb7d12a24496a878, type: 3}
+  - {fileID: 21300000, guid: 0b38cfe5e44665d4c9805c0b0b9958cc, type: 3}
+  - {fileID: 21300000, guid: a37f4a1663af8d648aa58405a496204f, type: 3}
+  - {fileID: 21300000, guid: b2a091a6f2cf3374586dccaf67685495, type: 3}
+  - {fileID: 21300000, guid: 8db1f7b7cebe1384da34faa85c0e663f, type: 3}
+  - {fileID: 21300000, guid: 5f75ed18dc9fcc64faff056978ef8bae, type: 3}
+  - {fileID: 21300000, guid: 31e8a1d99fc9a664798216895ece4759, type: 3}
+  - {fileID: 21300000, guid: 50ae464a7270c72469c363a58435d6d7, type: 3}
+  - {fileID: 21300000, guid: a1439a6adfb0773458d08aca7086785b, type: 3}
+  - {fileID: 21300000, guid: dd7b76ba142fbe94d9c6c9386b29e5a3, type: 3}
+  - {fileID: 21300000, guid: 1672b1ca9a354d84a9050d09c0a5f6f6, type: 3}
+  - {fileID: 21300000, guid: afd90d1b4f43a2a4eb0fc7a1be7e276f, type: 3}
+  - {fileID: 21300000, guid: 069010bb95123e44f81c35c39dd8065e, type: 3}
+  - {fileID: 21300000, guid: 6be8ffdc0a928b54f90ffc459d9a035b, type: 3}
+  - {fileID: 21300000, guid: 55fca41d288f3ce4cbc0fe23243e31ff, type: 3}
+  - {fileID: 21300000, guid: 1857763e0b8ff9b45b85d0e1047884b2, type: 3}
+  - {fileID: 21300000, guid: e258558f07920014f81fbfc6c8190982, type: 3}
+  - {fileID: 21300000, guid: 121b349f82659d343b30bf40c1db8f5f, type: 3}
+  - {fileID: 21300000, guid: 2756d8df1073a2d4281d388cbefb6611, type: 3}
+  m_PackedSpriteNamesToIndex:
+  - BlockTileSingleCenter
+  - BlockTileSingle
+  - Tile-Blue-Background
+  - PixelTop
+  - Preview-Blue
+  - Tile-Blue-Icon
+  - Tile-Yellow-Icon
+  - Tile-Purple-Background
+  - Tile-Red-Background
+  - TextBoxChain
+  - Preview-Purple
+  - BlockTileSingleLeft
+  - Preview-Yellow
+  - BlockTileSingleRight
+  - Tile-Purple-Icon
+  - Tile-Red-Icon
+  - Tile-Green-Background
+  - Preview-Green
+  - Tile-Green-Icon
+  - Tile-Indigo-Background
+  - Tile-Yellow-Background
+  - TechBox
+  - Preview-Indigo
+  - PixelBottomLeft
+  - Border
+  - TechBoxChain
+  - Preview-Red
+  - Tile-Indigo-Icon
+  m_RenderDataMap: {}
+  m_Tag: PuzzleGridSpriteAtlas
+  m_IsVariant: 0
